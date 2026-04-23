@@ -21,7 +21,7 @@ A lightweight, single-file wellness tracking app that runs entirely in the brows
 No build step or dependencies required.
 
 ```bash
-git clone https://github.com/your-username/wellness-tracker.git
+git clone https://github.com/KhushiG27/wellness-tracker.git
 cd wellness-tracker
 ```
 
