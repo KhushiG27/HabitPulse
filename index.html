@@ -332,8 +332,11 @@
 <div class="toast" id="toast">Entry saved!</div>
 
 <script>
-// ── Constants & helpers ──────────────────────────────────────────
-const API = 'http://localhost:5000/api';
+// ── API Config ───────────────────────────────────────────────────
+// uses live URL in production, localhost in development
+const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000/api'
+  : 'https://habitpulse-api.onrender.com/api';
 const MAX_WATER = 8;
 const moodEmoji = { awful: '😞', bad: '😕', okay: '😐', good: '🙂', great: '😄' };
 
