@@ -314,8 +314,6 @@
       <button class="modal-close" id="modal-close">✕</button>
     </div>
     <div class="modal-actions">
-      <button class="modal-dl-btn csv" id="dl-csv">⬇️ Download CSV</button>
-      <button class="modal-dl-btn json" id="dl-json">⬇️ Download JSON</button>
       <button class="modal-dl-btn pdf" id="dl-pdf">⬇️ Download PDF</button>
     </div>
     <div class="modal-table-wrap" id="modal-table-wrap">
@@ -966,14 +964,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  document.getElementById('dl-csv').addEventListener('click', function() {
-    downloadCSV();
-  });
-
-  document.getElementById('dl-json').addEventListener('click', function() {
-    downloadJSON();
-  });
-
   document.getElementById('dl-pdf').addEventListener('click', function() {
     downloadPDF();
   });
@@ -1039,31 +1029,6 @@ async function openExportModal() {
   } catch (err) {
     wrap.innerHTML = '<p class="modal-loading" style="color:var(--danger)">Error: ' + err.message + '</p>';
   }
-}
-
-function downloadCSV() {
-  if (exportData.length === 0) { showToast('No data to export'); return; }
-  var rows = [['Date', 'Mood', 'Water (glasses)', 'Sleep Start', 'Sleep End', 'Sleep Duration', 'Exercise', 'Stress (1-10)', 'Notes']];
-  exportData.forEach(function(e) {
-    var sl = calcSleep(e.sleepStart || '22:30', e.sleepEnd || '06:30');
-    var exList = e.exercise && e.exercise.length > 0 ? e.exercise.join(' | ') : '';
-    var notes = (e.notes || '').replace(/"/g, '""');
-    rows.push([
-      e.date,
-      e.mood || '',
-      e.water || 0,
-      e.sleepStart || '22:30',
-      e.sleepEnd || '06:30',
-      sl.label,
-      exList,
-      e.stress || 5,
-      '"' + notes + '"'
-    ]);
-  });
-  var csv = rows.map(function(r) { return r.join(','); }).join('\n');
-  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  triggerDownload(blob, 'habitpulse-data.csv');
-  showToast('CSV downloaded! 📊');
 }
 
 function downloadPDF() {
