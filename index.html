@@ -8,6 +8,52 @@
 </head>
 <body>
 
+<!-- ═══════════════ AUTH SCREEN ═══════════════ -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-logo">🌿 HabitPulse</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login-btn">Login</button>
+      <button class="auth-tab" id="tab-register-btn">Register</button>
+    </div>
+
+    <!-- Login Form -->
+    <form class="auth-form" id="login-form">
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" required />
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" required />
+      </div>
+      <div class="auth-error" id="login-error"></div>
+      <button type="submit" class="auth-btn">Login</button>
+    </form>
+
+    <!-- Register Form -->
+    <form class="auth-form hidden" id="register-form">
+      <div class="auth-field">
+        <label>Name</label>
+        <input type="text" id="reg-name" placeholder="Your name" required />
+      </div>
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" id="reg-email" placeholder="you@example.com" required />
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" id="reg-password" placeholder="Min 6 characters" required />
+      </div>
+      <div class="auth-error" id="register-error"></div>
+      <button type="submit" class="auth-btn">Create Account</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════ MAIN APP ═══════════════ -->
+<div class="app-wrap hidden" id="app-wrap">
+
 <!-- Top bar -->
 <div class="topbar">
   <div class="topbar-left">
@@ -19,6 +65,8 @@
       <span id="streak-fire-pill">🌱</span>
       <span id="streak-num-pill">0</span>
     </div>
+    <span class="user-name-pill" id="user-name-pill"></span>
+    <button class="logout-btn" id="logout-btn" title="Logout">⏻</button>
     <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
       <span class="toggle-icon" id="toggle-icon">🌙</span>
     </button>
@@ -40,15 +88,11 @@
 
 <!-- ═══════════════ TAB: TODAY ═══════════════ -->
 <div class="tab-panel active" id="tab-today">
-
-  <!-- Date nav -->
   <div class="date-nav">
     <button id="prev-day" aria-label="Previous day">&#8592;</button>
     <span id="current-date"></span>
     <button id="next-day" aria-label="Next day">&#8594;</button>
   </div>
-
-  <!-- Progress ring row -->
   <div class="progress-row">
     <div class="progress-item">
       <svg class="ring" viewBox="0 0 64 64">
@@ -83,11 +127,7 @@
       <span class="ring-label" id="ring-stress-label">5/10</span>
     </div>
   </div>
-
-  <!-- Cards -->
   <div class="cards-wrap">
-
-    <!-- Mood -->
     <div class="card" id="card-mood">
       <div class="card-header" data-toggle="mood">
         <h2><span class="icon">😊</span> Mood</h2>
@@ -104,8 +144,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Water -->
     <div class="card" id="card-water">
       <div class="card-header" data-toggle="water">
         <h2><span class="icon">💧</span> Water</h2>
@@ -124,8 +162,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Sleep -->
     <div class="card" id="card-sleep">
       <div class="card-header" data-toggle="sleep">
         <h2><span class="icon">🌙</span> Sleep</h2>
@@ -144,8 +180,6 @@
         <div class="sleep-duration" id="sleep-duration">8h 0m</div>
       </div>
     </div>
-
-    <!-- Exercise -->
     <div class="card" id="card-exercise">
       <div class="card-header" data-toggle="exercise">
         <h2><span class="icon">🏃</span> Exercise</h2>
@@ -169,8 +203,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Stress -->
     <div class="card" id="card-stress">
       <div class="card-header" data-toggle="stress">
         <h2><span class="icon">🧠</span> Stress</h2>
@@ -183,8 +215,6 @@
         <div class="stress-labels"><span>Calm</span><span>Moderate</span><span>High</span></div>
       </div>
     </div>
-
-    <!-- Notes -->
     <div class="card" id="card-notes">
       <div class="card-header" data-toggle="notes">
         <h2><span class="icon">📝</span> Notes</h2>
@@ -195,21 +225,16 @@
         <textarea id="notes" placeholder="How are you feeling today? Any wins, challenges, or reflections..."></textarea>
       </div>
     </div>
-
-  </div><!-- /cards-wrap -->
-
+  </div>
   <button class="save-btn" id="save-btn">💾 Save Today's Entry</button>
-
 </div><!-- /tab-today -->
 
 <!-- ═══════════════ TAB: INSIGHTS ═══════════════ -->
 <div class="tab-panel" id="tab-insights">
-
   <div class="panel-header">
     <h2>📈 Weekly Insights</h2>
     <p class="panel-sub">Last 7 days overview</p>
   </div>
-
   <div class="insights-grid">
     <div class="insight-card">
       <div class="ic-label">💧 Avg Water</div>
@@ -242,92 +267,211 @@
       <div class="ic-sub">out of 7</div>
     </div>
   </div>
-
   <div class="chart-section">
     <div class="chart-title">💧 Water — last 7 days</div>
     <div class="week-bars" id="water-bars"></div>
   </div>
-
   <div class="chart-section">
     <div class="chart-title">🌙 Sleep — last 7 days</div>
     <div class="week-bars" id="sleep-bars"></div>
   </div>
-
   <div class="insight-tips" id="insight-tips"></div>
-
+  <div class="export-wrap">
+    <button class="export-btn" id="export-btn">📤 Export My Data (JSON)</button>
+  </div>
 </div><!-- /tab-insights -->
 
 <!-- ═══════════════ TAB: HISTORY ═══════════════ -->
 <div class="tab-panel" id="tab-history">
-
   <div class="panel-header">
     <h2>📅 History</h2>
     <p class="panel-sub">Your past entries</p>
   </div>
-
-  <!-- Streak full view -->
   <div class="streak-banner" id="streak-banner">
-    <div class="streak-fire" id="streak-fire">�</div>
+    <div class="streak-fire" id="streak-fire">🌱</div>
     <div class="streak-info">
       <div class="streak-num" id="streak-num">0</div>
       <div class="streak-sub" id="streak-sub">day streak</div>
     </div>
     <div class="streak-dots" id="streak-dots"></div>
   </div>
-
   <div class="history-list" id="history-list"></div>
-
 </div><!-- /tab-history -->
+
+</div><!-- /app-wrap -->
 
 <div class="toast" id="toast">Entry saved!</div>
 
 <script>
+  // ── API Config ───────────────────────────────────────────────────
+  const API = 'http://localhost:5000/api';
+
+  function getToken() { return localStorage.getItem('hp_token'); }
+  function getUser()  { return JSON.parse(localStorage.getItem('hp_user') || 'null'); }
+
+  async function apiFetch(path, options = {}) {
+    const token = getToken();
+    const res = await fetch(API + path, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: 'Bearer ' + token } : {}),
+      },
+      ...options,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Request failed');
+    return data;
+  }
+
+  // ── Auth ─────────────────────────────────────────────────────────
+  const authOverlay = document.getElementById('auth-overlay');
+  const appWrap     = document.getElementById('app-wrap');
+
+  function showApp(user) {
+    authOverlay.classList.add('hidden');
+    appWrap.classList.remove('hidden');
+    document.getElementById('user-name-pill').textContent = '👤 ' + user.name;
+    init();
+  }
+
+  function showAuth() {
+    authOverlay.classList.remove('hidden');
+    appWrap.classList.add('hidden');
+  }
+
+  // Check if already logged in
+  if (getToken() && getUser()) {
+    showApp(getUser());
+  } else {
+    showAuth();
+  }
+
+  // Auth tab switching
+  document.getElementById('tab-login-btn').addEventListener('click', () => {
+    document.getElementById('tab-login-btn').classList.add('active');
+    document.getElementById('tab-register-btn').classList.remove('active');
+    document.getElementById('login-form').classList.remove('hidden');
+    document.getElementById('register-form').classList.add('hidden');
+  });
+  document.getElementById('tab-register-btn').addEventListener('click', () => {
+    document.getElementById('tab-register-btn').classList.add('active');
+    document.getElementById('tab-login-btn').classList.remove('active');
+    document.getElementById('register-form').classList.remove('hidden');
+    document.getElementById('login-form').classList.add('hidden');
+  });
+
+  // Login
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('login-error');
+    errEl.textContent = '';
+    try {
+      const data = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: document.getElementById('login-email').value,
+          password: document.getElementById('login-password').value,
+        }),
+      });
+      localStorage.setItem('hp_token', data.token);
+      localStorage.setItem('hp_user', JSON.stringify(data.user));
+      showApp(data.user);
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+
+  // Register
+  document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('register-error');
+    errEl.textContent = '';
+    try {
+      const data = await apiFetch('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: document.getElementById('reg-name').value,
+          email: document.getElementById('reg-email').value,
+          password: document.getElementById('reg-password').value,
+        }),
+      });
+      localStorage.setItem('hp_token', data.token);
+      localStorage.setItem('hp_user', JSON.stringify(data.user));
+      showApp(data.user);
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+
+  // Logout
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    localStorage.removeItem('hp_token');
+    localStorage.removeItem('hp_user');
+    showAuth();
+  });
+
+  // ── App Init ─────────────────────────────────────────────────────
+  function init() {
+    applyThemeOnLoad();
+    setupTabSwitching();
+    setupAccordion();
+    setupDateNav();
+    setupWater();
+    setupMood();
+    setupSleep();
+    setupExercise();
+    setupStress();
+    setupNotes();
+    setupSaveBtn();
+    setupExportBtn();
+    loadEntry();
+  }
+
   // ── Dark mode ────────────────────────────────────────────────────
   const root = document.documentElement;
-  const themeToggle = document.getElementById('theme-toggle');
-  const toggleIcon = document.getElementById('toggle-icon');
 
   function applyTheme(dark) {
     root.setAttribute('data-theme', dark ? 'dark' : 'light');
-    toggleIcon.textContent = dark ? '☀️' : '🌙';
+    document.getElementById('toggle-icon').textContent = dark ? '☀️' : '🌙';
     localStorage.setItem('wellness_theme', dark ? 'dark' : 'light');
   }
 
-  themeToggle.addEventListener('click', () => {
-    applyTheme(root.getAttribute('data-theme') !== 'dark');
-  });
-
-  const savedTheme = localStorage.getItem('wellness_theme');
-  if (savedTheme) { applyTheme(savedTheme === 'dark'); }
-  else if (window.matchMedia('(prefers-color-scheme: dark)').matches) { applyTheme(true); }
+  function applyThemeOnLoad() {
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      applyTheme(root.getAttribute('data-theme') !== 'dark');
+    });
+    const savedTheme = localStorage.getItem('wellness_theme');
+    if (savedTheme) applyTheme(savedTheme === 'dark');
+    else if (window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme(true);
+  }
 
   // ── Tab switching ────────────────────────────────────────────────
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab;
-      document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      btn.setAttribute('aria-selected','true');
-      document.getElementById('tab-' + tab).classList.add('active');
-      if (tab === 'insights') renderWeeklyInsights();
-      if (tab === 'history') renderHistory();
+  function setupTabSwitching() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected','true');
+        document.getElementById('tab-' + tab).classList.add('active');
+        if (tab === 'insights') renderWeeklyInsights();
+        if (tab === 'history') renderHistory();
+      });
     });
-  });
+  }
 
-  // ── Accordion cards ──────────────────────────────────────────────
-  document.querySelectorAll('.card-header').forEach(header => {
-    header.addEventListener('click', () => {
-      const id = header.dataset.toggle;
-      const body = document.getElementById('body-' + id);
-      const card = header.closest('.card');
-      const isOpen = card.classList.contains('open');
-      // Close all
-      document.querySelectorAll('.card').forEach(c => c.classList.remove('open'));
-      // Open clicked if it was closed
-      if (!isOpen) card.classList.add('open');
+  // ── Accordion ────────────────────────────────────────────────────
+  function setupAccordion() {
+    document.querySelectorAll('.card-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const card = header.closest('.card');
+        const isOpen = card.classList.contains('open');
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('open'));
+        if (!isOpen) card.classList.add('open');
+      });
     });
-  });
+  }
 
   // ── Date navigation ──────────────────────────────────────────────
   let offset = 0;
@@ -351,19 +495,17 @@
     document.getElementById('next-day').style.opacity = offset >= 0 ? '0.3' : '1';
   }
 
-  document.getElementById('prev-day').addEventListener('click', () => { offset--; loadEntry(); });
-  document.getElementById('next-day').addEventListener('click', () => { if (offset < 0) { offset++; loadEntry(); } });
+  function setupDateNav() {
+    document.getElementById('prev-day').addEventListener('click', () => { offset--; loadEntry(); });
+    document.getElementById('next-day').addEventListener('click', () => { if (offset < 0) { offset++; loadEntry(); } });
+  }
 
   // ── State ────────────────────────────────────────────────────────
-  let state = {
-    mood: null,
-    water: 0,
-    sleepStart: '22:30',
-    sleepEnd: '06:30',
-    exercise: [],
-    stress: 5,
-    notes: ''
-  };
+  let state = { mood: null, water: 0, sleepStart: '22:30', sleepEnd: '06:30', exercise: [], stress: 5, notes: '' };
+
+  function DEFAULT_STATE() {
+    return { mood: null, water: 0, sleepStart: '22:30', sleepEnd: '06:30', exercise: [], stress: 5, notes: '' };
+  }
 
   // ── Water ────────────────────────────────────────────────────────
   const MAX_WATER = 8;
@@ -375,33 +517,31 @@
       const c = document.createElement('button');
       c.className = 'cup' + (i < state.water ? ' filled' : '');
       c.setAttribute('aria-label', `Glass ${i + 1}`);
-      c.addEventListener('click', () => {
-        state.water = i < state.water ? i : i + 1;
-        renderWater();
-        updateSummary();
-        saveDraft();
-      });
+      c.addEventListener('click', () => { state.water = i < state.water ? i : i + 1; renderWater(); updateSummary(); });
       cups.appendChild(c);
     }
     document.getElementById('water-count').textContent = state.water;
   }
 
-  document.getElementById('water-add').addEventListener('click', () => {
-    if (state.water < MAX_WATER) { state.water++; renderWater(); updateSummary(); saveDraft(); }
-  });
-  document.getElementById('water-remove').addEventListener('click', () => {
-    if (state.water > 0) { state.water--; renderWater(); updateSummary(); saveDraft(); }
-  });
+  function setupWater() {
+    document.getElementById('water-add').addEventListener('click', () => {
+      if (state.water < MAX_WATER) { state.water++; renderWater(); updateSummary(); }
+    });
+    document.getElementById('water-remove').addEventListener('click', () => {
+      if (state.water > 0) { state.water--; renderWater(); updateSummary(); }
+    });
+  }
 
   // ── Mood ─────────────────────────────────────────────────────────
-  document.getElementById('mood-grid').addEventListener('click', e => {
-    const btn = e.target.closest('.mood-btn');
-    if (!btn) return;
-    state.mood = btn.dataset.mood;
-    document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('selected', b === btn));
-    updateSummary();
-    saveDraft();
-  });
+  function setupMood() {
+    document.getElementById('mood-grid').addEventListener('click', e => {
+      const btn = e.target.closest('.mood-btn');
+      if (!btn) return;
+      state.mood = btn.dataset.mood;
+      document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('selected', b === btn));
+      updateSummary();
+    });
+  }
 
   // ── Sleep ────────────────────────────────────────────────────────
   function calcSleep(start, end) {
@@ -419,29 +559,17 @@
     updateSummary();
   }
 
-  document.getElementById('sleep-start').addEventListener('change', e => { state.sleepStart = e.target.value; updateSleepDisplay(); saveDraft(); });
-  document.getElementById('sleep-end').addEventListener('change', e => { state.sleepEnd = e.target.value; updateSleepDisplay(); saveDraft(); });
+  function setupSleep() {
+    document.getElementById('sleep-start').addEventListener('change', e => { state.sleepStart = e.target.value; updateSleepDisplay(); });
+    document.getElementById('sleep-end').addEventListener('change', e => { state.sleepEnd = e.target.value; updateSleepDisplay(); });
+  }
 
   // ── Exercise ─────────────────────────────────────────────────────
-  document.getElementById('exercise-list').addEventListener('click', e => {
-    const item = e.target.closest('.exercise-item');
-    if (!item) return;
-    toggleExercise(item);
-  });
-  document.getElementById('exercise-list').addEventListener('keydown', e => {
-    if (e.key === ' ' || e.key === 'Enter') {
-      const item = e.target.closest('.exercise-item');
-      if (item) { e.preventDefault(); toggleExercise(item); }
-    }
-  });
-
   function toggleExercise(item) {
     const ex = item.dataset.ex;
     const idx = state.exercise.indexOf(ex);
     if (idx === -1) state.exercise.push(ex); else state.exercise.splice(idx, 1);
-    renderExercise();
-    updateSummary();
-    saveDraft();
+    renderExercise(); updateSummary();
   }
 
   function renderExercise() {
@@ -452,107 +580,124 @@
     });
   }
 
-  // ── Stress ───────────────────────────────────────────────────────
-  const stressRange = document.getElementById('stress-range');
-  const stressValue = document.getElementById('stress-value');
+  function setupExercise() {
+    document.getElementById('exercise-list').addEventListener('click', e => {
+      const item = e.target.closest('.exercise-item');
+      if (item) toggleExercise(item);
+    });
+    document.getElementById('exercise-list').addEventListener('keydown', e => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        const item = e.target.closest('.exercise-item');
+        if (item) { e.preventDefault(); toggleExercise(item); }
+      }
+    });
+  }
 
-  stressRange.addEventListener('input', () => {
-    state.stress = parseInt(stressRange.value);
-    stressValue.textContent = state.stress;
-    const hue = Math.round(120 - (state.stress - 1) * 12);
-    stressValue.style.color = `hsl(${hue}, 70%, 45%)`;
-    updateSummary();
-    saveDraft();
-  });
+  // ── Stress ───────────────────────────────────────────────────────
+  function setupStress() {
+    const stressRange = document.getElementById('stress-range');
+    const stressValue = document.getElementById('stress-value');
+    stressRange.addEventListener('input', () => {
+      state.stress = parseInt(stressRange.value);
+      stressValue.textContent = state.stress;
+      stressValue.style.color = `hsl(${Math.round(120 - (state.stress - 1) * 12)}, 70%, 45%)`;
+      updateSummary();
+    });
+  }
 
   // ── Notes ────────────────────────────────────────────────────────
-  document.getElementById('notes').addEventListener('input', e => { state.notes = e.target.value; saveDraft(); });
+  function setupNotes() {
+    document.getElementById('notes').addEventListener('input', e => { state.notes = e.target.value; });
+  }
 
-  // ── Summary / Previews / Rings ──────────────────────────────────
+  // ── Summary / Rings ──────────────────────────────────────────────
   const moodEmoji = { awful: '😞', bad: '😕', okay: '😐', good: '🙂', great: '😄' };
 
   function updateSummary() {
-    // Card previews
     document.getElementById('preview-mood').textContent = state.mood ? moodEmoji[state.mood] : '—';
     document.getElementById('preview-water').textContent = `${state.water} / 8`;
-    const { label } = calcSleep(state.sleepStart, state.sleepEnd);
+    const { label, h, m } = calcSleep(state.sleepStart, state.sleepEnd);
     document.getElementById('preview-sleep').textContent = label;
     document.getElementById('preview-exercise').textContent = `${state.exercise.length} done`;
     document.getElementById('preview-stress').textContent = `${state.stress} / 10`;
     document.getElementById('preview-notes').textContent = state.notes ? state.notes.substring(0,30) + (state.notes.length > 30 ? '...' : '') : 'Tap to add';
-
-    // Progress rings
     updateRing('ring-water', state.water / MAX_WATER);
-    const { h, m } = calcSleep(state.sleepStart, state.sleepEnd);
-    const sleepH = h + m / 60;
-    updateRing('ring-sleep', Math.min(sleepH / 8, 1));
+    updateRing('ring-sleep', Math.min((h + m / 60) / 8, 1));
     updateRing('ring-exercise', state.exercise.length / 4);
-    updateRing('ring-stress', 1 - (state.stress - 1) / 9); // inverted: lower stress = fuller ring
-
+    updateRing('ring-stress', 1 - (state.stress - 1) / 9);
     document.getElementById('ring-water-label').textContent = `${state.water}/8`;
     document.getElementById('ring-sleep-label').textContent = `${h}h`;
     document.getElementById('ring-exercise-label').textContent = `${state.exercise.length}/4`;
     document.getElementById('ring-stress-label').textContent = `${state.stress}/10`;
-
-    // Streak pill
-    const streak = calcStreak();
-    const fire = streak >= 14 ? '🔥🔥' : streak >= 7 ? '🔥' : streak >= 3 ? '✨' : '🌱';
-    document.getElementById('streak-fire-pill').textContent = fire;
-    document.getElementById('streak-num-pill').textContent = streak;
   }
 
   function updateRing(id, pct) {
     const ring = document.getElementById(id);
     const circumference = 2 * Math.PI * 26;
-    const offset = circumference * (1 - pct);
-    ring.style.strokeDashoffset = offset;
+    ring.style.strokeDashoffset = circumference * (1 - pct);
   }
 
-  // ── Save / Load ──────────────────────────────────────────────────
-  document.getElementById('save-btn').addEventListener('click', () => {
-    localStorage.setItem('wellness_' + getDateKey(), JSON.stringify(state));
-    localStorage.removeItem('wellness_draft'); // draft promoted to real save
-    showToast('Entry saved! 🌿');
-    renderStreak();
-    renderWeeklyInsights();
-  });
+  // ── Save / Load via API ──────────────────────────────────────────
+  function setupSaveBtn() {
+    document.getElementById('save-btn').addEventListener('click', async () => {
+      try {
+        await apiFetch('/entries/' + getDateKey(), {
+          method: 'POST',
+          body: JSON.stringify(state),
+        });
+        showToast('Entry saved! 🌿');
+        renderStreak();
+        renderWeeklyInsights();
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    });
+  }
 
-  function loadEntry() {
-    updateDateLabel();
-    const saved = localStorage.getItem('wellness_' + getDateKey());
-    if (saved) {
-      state = JSON.parse(saved);
-    } else if (offset === 0) {
-      // Load draft for today if it exists (unsaved in-progress work)
-      const draft = localStorage.getItem('wellness_draft');
-      state = draft ? JSON.parse(draft) : DEFAULT_STATE();
-    } else {
-      state = DEFAULT_STATE();
+  // Cache entries locally to avoid repeated API calls
+  let entriesCache = {};
+
+  async function loadAllEntries() {
+    try {
+      const entries = await apiFetch('/entries');
+      entriesCache = {};
+      entries.forEach(e => { entriesCache[e.date] = e; });
+    } catch (err) {
+      console.error('Failed to load entries:', err.message);
     }
+  }
+
+  async function loadEntry() {
+    updateDateLabel();
+    await loadAllEntries();
+    const entry = entriesCache[getDateKey()];
+    state = entry ? {
+      mood: entry.mood,
+      water: entry.water,
+      sleepStart: entry.sleepStart,
+      sleepEnd: entry.sleepEnd,
+      exercise: entry.exercise,
+      stress: entry.stress,
+      notes: entry.notes,
+    } : DEFAULT_STATE();
     applyState();
     renderStreak();
     renderWeeklyInsights();
   }
 
   function applyState() {
-    // Mood
     document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('selected', b.dataset.mood === state.mood));
-    // Water
     renderWater();
-    // Sleep
     document.getElementById('sleep-start').value = state.sleepStart;
     document.getElementById('sleep-end').value = state.sleepEnd;
     updateSleepDisplay();
-    // Exercise
     renderExercise();
-    // Stress
+    const stressRange = document.getElementById('stress-range');
+    const stressValue = document.getElementById('stress-value');
     stressRange.value = state.stress;
     stressValue.textContent = state.stress;
-    const hue = Math.round(120 - (state.stress - 1) * 12);
-    stressValue.style.color = `hsl(${hue}, 70%, 45%)`;
-    // Notes
+    stressValue.style.color = `hsl(${Math.round(120 - (state.stress - 1) * 12)}, 70%, 45%)`;
     document.getElementById('notes').value = state.notes;
-    // Summary
     updateSummary();
   }
 
@@ -564,10 +709,6 @@
   }
 
   // ── Streak ───────────────────────────────────────────────────────
-  function isLogged(dateKey) {
-    return !!localStorage.getItem('wellness_' + dateKey);
-  }
-
   function getKeyForOffset(off) {
     const d = new Date();
     d.setDate(d.getDate() + off);
@@ -576,10 +717,10 @@
 
   function calcStreak() {
     let streak = 0;
-    // Start from yesterday; today counts only if saved
-    let start = isLogged(getKeyForOffset(0)) ? 0 : -1;
+    const todayKey = getKeyForOffset(0);
+    let start = entriesCache[todayKey] ? 0 : -1;
     for (let i = start; i >= -365; i--) {
-      if (isLogged(getKeyForOffset(i))) streak++;
+      if (entriesCache[getKeyForOffset(i)]) streak++;
       else break;
     }
     return streak;
@@ -587,118 +728,61 @@
 
   function renderStreak() {
     const streak = calcStreak();
-    const todayLogged = isLogged(getKeyForOffset(0));
-
+    const todayLogged = !!entriesCache[getKeyForOffset(0)];
     document.getElementById('streak-num').textContent = streak;
     document.getElementById('streak-sub').textContent =
       streak === 0 ? 'No streak yet — save today to start one!'
-      : todayLogged ? `day streak — great work! 🌟`
-      : `day streak — log today to keep it going!`;
-
+      : todayLogged ? 'day streak — great work! 🌟'
+      : 'day streak — log today to keep it going!';
     const fire = streak >= 14 ? '🔥🔥' : streak >= 7 ? '🔥' : streak >= 3 ? '✨' : '🌱';
     document.getElementById('streak-fire').textContent = fire;
     document.getElementById('streak-fire-pill').textContent = fire;
     document.getElementById('streak-num-pill').textContent = streak;
-
     const dots = document.getElementById('streak-dots');
     dots.innerHTML = '';
     const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
     for (let i = -6; i <= 0; i++) {
       const key = getKeyForOffset(i);
-      const logged = isLogged(key);
+      const logged = !!entriesCache[key];
       const d = new Date(); d.setDate(d.getDate() + i);
-      const dayName = days[d.getDay()];
       const dot = document.createElement('div');
       dot.className = 'streak-dot' + (logged ? ' logged' : '') + (i === 0 ? ' today' : '');
-      dot.innerHTML = `${dayName}`;
-      if (logged) dot.title = `${key} — logged ✓`;
+      dot.textContent = days[d.getDay()];
+      if (logged) dot.title = key + ' — logged ✓';
       dots.appendChild(dot);
     }
   }
 
   // ── Weekly Insights ──────────────────────────────────────────────
-  function getWeekEntries() {
+  function renderWeeklyInsights() {
     const entries = [];
     for (let i = -6; i <= 0; i++) {
-      const key = getKeyForOffset(i);
-      const raw = localStorage.getItem('wellness_' + key);
-      if (raw) {
-        try { entries.push({ key, ...JSON.parse(raw) }); } catch {}
-      }
+      const e = entriesCache[getKeyForOffset(i)];
+      if (e) entries.push(e);
     }
-    return entries;
-  }
-
-  function renderWeeklyInsights() {
-    const entries = getWeekEntries();
     const n = entries.length;
-
-    // Avg water
-    const avgWater = n ? (entries.reduce((s, e) => s + (e.water || 0), 0) / n).toFixed(1) : '—';
-    document.getElementById('ins-water').textContent = n ? avgWater : '—';
-
-    // Avg sleep hours
+    document.getElementById('ins-water').textContent = n ? (entries.reduce((s,e) => s + e.water, 0) / n).toFixed(1) : '—';
     if (n) {
-      const totalSleepH = entries.reduce((s, e) => {
-        const { h, m } = calcSleep(e.sleepStart || '22:30', e.sleepEnd || '06:30');
-        return s + h + m / 60;
-      }, 0);
-      document.getElementById('ins-sleep').textContent = (totalSleepH / n).toFixed(1);
-    } else {
-      document.getElementById('ins-sleep').textContent = '—';
-    }
-
-    // Top mood
-    const moodScore = { awful: 1, bad: 2, okay: 3, good: 4, great: 5 };
+      const totalSleep = entries.reduce((s,e) => { const {h,m} = calcSleep(e.sleepStart,e.sleepEnd); return s + h + m/60; }, 0);
+      document.getElementById('ins-sleep').textContent = (totalSleep / n).toFixed(1);
+    } else { document.getElementById('ins-sleep').textContent = '—'; }
     const moodEntries = entries.filter(e => e.mood);
     if (moodEntries.length) {
       const counts = {};
       moodEntries.forEach(e => { counts[e.mood] = (counts[e.mood] || 0) + 1; });
-      const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+      const top = Object.entries(counts).sort((a,b) => b[1]-a[1])[0][0];
       document.getElementById('ins-mood').textContent = moodEmoji[top];
       document.getElementById('ins-mood-sub').textContent = top + ' (most common)';
-    } else {
-      document.getElementById('ins-mood').textContent = '—';
-      document.getElementById('ins-mood-sub').textContent = 'this week';
-    }
-
-    // Avg stress
-    const avgStress = n ? (entries.reduce((s, e) => s + (e.stress || 5), 0) / n).toFixed(1) : '—';
-    document.getElementById('ins-stress').textContent = n ? avgStress : '—';
-
-    // Active days
-    const activeDays = entries.filter(e => e.exercise && e.exercise.length > 0).length;
-    document.getElementById('ins-exercise').textContent = n ? activeDays : '—';
-
-    // Days logged
+    } else { document.getElementById('ins-mood').textContent = '—'; document.getElementById('ins-mood-sub').textContent = 'this week'; }
+    document.getElementById('ins-stress').textContent = n ? (entries.reduce((s,e) => s + e.stress, 0) / n).toFixed(1) : '—';
+    document.getElementById('ins-exercise').textContent = n ? entries.filter(e => e.exercise && e.exercise.length > 0).length : '—';
     document.getElementById('ins-logged').textContent = n;
-
-    // Water bar chart
-    renderWaterBars();
-    renderSleepBars();
-
-    // Tips
-    renderTips(entries, n, avgWater, avgStress, activeDays);
+    renderBars('water-bars', i => { const e = entriesCache[getKeyForOffset(i)]; return e ? e.water : null; }, 8, v => `${v} glasses`);
+    renderBars('sleep-bars', i => { const e = entriesCache[getKeyForOffset(i)]; if (!e) return null; const {h,m} = calcSleep(e.sleepStart,e.sleepEnd); return h+m/60; }, 9, v => `${v.toFixed(1)}h`);
+    renderTips(entries, n);
   }
 
-  function renderWaterBars() {
-    renderGenericBars('water-bars', i => {
-      const raw = localStorage.getItem('wellness_' + getKeyForOffset(i));
-      return raw ? (JSON.parse(raw).water || 0) : null;
-    }, 8, v => `${v} glasses`);
-  }
-
-  function renderSleepBars() {
-    renderGenericBars('sleep-bars', i => {
-      const raw = localStorage.getItem('wellness_' + getKeyForOffset(i));
-      if (!raw) return null;
-      const e = JSON.parse(raw);
-      const { h, m } = calcSleep(e.sleepStart || '22:30', e.sleepEnd || '06:30');
-      return h + m / 60;
-    }, 9, v => `${v.toFixed(1)}h`);
-  }
-
-  function renderGenericBars(containerId, valueFn, maxDefault, labelFn) {
+  function renderBars(containerId, valueFn, maxDefault, labelFn) {
     const bars = document.getElementById(containerId);
     bars.innerHTML = '';
     const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -710,23 +794,30 @@
     }
     const max = Math.max(...values.map(v => v.val || 0), maxDefault);
     values.forEach(v => {
-      const wrap = document.createElement('div');
-      wrap.className = 'week-bar-wrap';
-      const bar = document.createElement('div');
-      bar.className = 'week-bar' + (v.hasData ? ' has-data' : '');
-      const pct = v.val != null ? Math.max((v.val / max) * 52, 3) : 3;
-      bar.style.height = pct + 'px';
+      const wrap = document.createElement('div'); wrap.className = 'week-bar-wrap';
+      const bar = document.createElement('div'); bar.className = 'week-bar' + (v.hasData ? ' has-data' : '');
+      bar.style.height = (v.val != null ? Math.max((v.val / max) * 52, 3) : 3) + 'px';
       bar.title = v.hasData ? labelFn(v.val) : 'No data';
-      const label = document.createElement('div');
-      label.className = 'week-bar-day';
-      label.textContent = v.day;
-      wrap.appendChild(bar);
-      wrap.appendChild(label);
-      bars.appendChild(wrap);
+      const label = document.createElement('div'); label.className = 'week-bar-day'; label.textContent = v.day;
+      wrap.appendChild(bar); wrap.appendChild(label); bars.appendChild(wrap);
     });
   }
 
-  // ── History tab ──────────────────────────────────────────────────
+  function renderTips(entries, n) {
+    const tips = document.getElementById('insight-tips');
+    tips.innerHTML = '';
+    if (!n) { tips.innerHTML = '<div class="tip">Start logging to see personalized tips here!</div>'; return; }
+    const avgWater = entries.reduce((s,e) => s+e.water,0)/n;
+    const avgStress = entries.reduce((s,e) => s+e.stress,0)/n;
+    const activeDays = entries.filter(e => e.exercise && e.exercise.length>0).length;
+    if (avgWater < 5) tips.innerHTML += '<div class="tip warn"><span class="tip-icon">💧</span>Your average water intake is low. Try to drink at least 6 glasses daily.</div>';
+    else tips.innerHTML += '<div class="tip good"><span class="tip-icon">💧</span>Great hydration this week! Keep it up.</div>';
+    if (avgStress > 7) tips.innerHTML += '<div class="tip warn"><span class="tip-icon">🧠</span>High stress levels detected. Consider adding relaxation or breathing exercises.</div>';
+    if (activeDays < 3) tips.innerHTML += '<div class="tip warn"><span class="tip-icon">🏃</span>Try to be active at least 3 days a week for better health.</div>';
+    else tips.innerHTML += '<div class="tip good"><span class="tip-icon">🏃</span>You were active ' + activeDays + ' days this week. Excellent!</div>';
+  }
+
+  // ── History ──────────────────────────────────────────────────────
   function renderHistory() {
     renderStreak();
     const list = document.getElementById('history-list');
@@ -734,160 +825,56 @@
     const entries = [];
     for (let i = 0; i >= -29; i--) {
       const key = getKeyForOffset(i);
-      const raw = localStorage.getItem('wellness_' + key);
-      if (raw) {
-        try { entries.push({ key, off: i, ...JSON.parse(raw) }); } catch {}
-      }
+      const e = entriesCache[key];
+      if (e) entries.push({ ...e, off: i });
     }
-    if (entries.length === 0) {
+    if (!entries.length) {
       list.innerHTML = '<div class="history-empty">No entries yet. Start logging to see your history here!</div>';
       return;
     }
     entries.forEach(e => {
       const { h, m } = calcSleep(e.sleepStart || '22:30', e.sleepEnd || '06:30');
-      const d = new Date(e.key + 'T00:00:00');
+      const d = new Date(e.date + 'T00:00:00');
       const label = e.off === 0 ? 'Today' : e.off === -1 ? 'Yesterday' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
       const card = document.createElement('div');
       card.className = 'history-card';
       card.innerHTML = `
-        <div class="hc-date">${label}<span class="hc-key">${e.key}</span></div>
+        <div class="hc-date">${label}<span class="hc-key">${e.date}</span></div>
         <div class="hc-stats">
           <span title="Mood">${e.mood ? moodEmoji[e.mood] : '—'}</span>
-          <span title="Water">💧 ${e.water || 0}</span>
-          <span title="Sleep">🌙 ${h}h${m > 0 ? m + 'm' : ''}</span>
-          <span title="Exercise">🏃 ${(e.exercise || []).length}</span>
-          <span title="Stress">🧠 ${e.stress || 5}/10</span>
+          <span title="Water">💧 ${e.water}/8</span>
+          <span title="Sleep">🌙 ${h}h${m > 0 ? m+'m' : ''}</span>
+          <span title="Exercise">🏃 ${e.exercise ? e.exercise.length : 0} done</span>
+          <span title="Stress">🧠 ${e.stress}/10</span>
         </div>
-        ${e.notes ? `<div class="hc-notes">${e.notes.substring(0, 80)}${e.notes.length > 80 ? '…' : ''}</div>` : ''}
+        ${e.notes ? `<div class="hc-notes">${e.notes.substring(0,80)}${e.notes.length > 80 ? '...' : ''}</div>` : ''}
       `;
-      card.addEventListener('click', () => {
-        offset = e.off;
-        document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        document.querySelector('[data-tab="today"]').classList.add('active');
-        document.querySelector('[data-tab="today"]').setAttribute('aria-selected','true');
-        document.getElementById('tab-today').classList.add('active');
-        loadEntry();
-      });
       list.appendChild(card);
     });
   }
 
-  function renderTips(entries, n, avgWater, avgStress, activeDays) {
-    const tips = document.getElementById('insight-tips');
-    tips.innerHTML = '';
-    if (n === 0) {
-      addTip(tips, '💡', 'Start logging your days to unlock personalized insights!', '');
-      return;
-    }
-
-    const water = parseFloat(avgWater);
-    const stress = parseFloat(avgStress);
-
-    if (water >= 7) addTip(tips, '💧', `Excellent hydration! You averaged ${avgWater} glasses this week.`, 'good');
-    else if (water >= 5) addTip(tips, '💧', `You averaged ${avgWater} glasses/day. Try to hit 8 for optimal hydration.`, 'warn');
-    else if (!isNaN(water)) addTip(tips, '💧', `Low water intake this week (${avgWater} avg). Aim for at least 6–8 glasses daily.`, '');
-
-    if (activeDays >= 5) addTip(tips, '🏃', `You exercised ${activeDays} out of 7 days — that's a strong week!`, 'good');
-    else if (activeDays >= 3) addTip(tips, '🏃', `${activeDays} active days this week. Try adding one more session next week.`, 'warn');
-    else if (n >= 3) addTip(tips, '🏃', `Only ${activeDays} active day(s) this week. Even a short walk counts!`, '');
-
-    if (!isNaN(stress) && stress <= 4) addTip(tips, '🧘', `Your stress was well-managed this week (avg ${avgStress}/10). Keep it up!`, 'good');
-    else if (!isNaN(stress) && stress >= 7) addTip(tips, '🧘', `High stress week (avg ${avgStress}/10). Consider adding a relaxation routine.`, '');
-    else if (!isNaN(stress)) addTip(tips, '🧘', `Moderate stress levels (avg ${avgStress}/10). You're doing okay.`, 'warn');
-
-    // Sleep tip
-    const sleepEntries = entries.filter(e => e.sleepStart && e.sleepEnd);
-    if (sleepEntries.length) {
-      const avgSleepH = sleepEntries.reduce((s, e) => {
-        const { h, m } = calcSleep(e.sleepStart, e.sleepEnd);
-        return s + h + m / 60;
-      }, 0) / sleepEntries.length;
-      if (avgSleepH >= 7.5) addTip(tips, '🌙', `Great sleep this week! Averaging ${avgSleepH.toFixed(1)}h per night.`, 'good');
-      else if (avgSleepH >= 6) addTip(tips, '🌙', `You averaged ${avgSleepH.toFixed(1)}h of sleep. Aim for 7–9h for best recovery.`, 'warn');
-      else addTip(tips, '🌙', `Low sleep average (${avgSleepH.toFixed(1)}h). Prioritize rest — it affects everything else.`, '');
-    }
-
-    if (n < 4) addTip(tips, '📅', `You logged ${n}/7 days. More entries = better insights!`, 'warn');
-  }
-
-  function addTip(container, icon, text, type) {
-    const div = document.createElement('div');
-    div.className = 'tip' + (type ? ' ' + type : '');
-    div.innerHTML = `<span class="tip-icon">${icon}</span><span>${text}</span>`;
-    container.appendChild(div);
-  }
-
-  // ── Daily Reset ──────────────────────────────────────────────────
-  const DEFAULT_STATE = () => ({
-    mood: null, water: 0, sleepStart: '22:30', sleepEnd: '06:30',
-    exercise: [], stress: 5, notes: ''
-  });
-
-  function todayKey() {
-    return new Date().toISOString().split('T')[0];
-  }
-
-  // Called on load and on midnight tick
-  function checkDailyReset() {
-    const lastActive = localStorage.getItem('wellness_last_active');
-    const today = todayKey();
-
-    if (lastActive && lastActive !== today) {
-      // New day — if yesterday had unsaved in-progress state, preserve it
-      const yesterdayKey = lastActive;
-      const alreadySaved = localStorage.getItem('wellness_' + yesterdayKey);
-      if (!alreadySaved) {
-        const draft = localStorage.getItem('wellness_draft');
-        if (draft) {
-          // Auto-save the draft under yesterday's date so it's not lost
-          localStorage.setItem('wellness_' + yesterdayKey, draft);
-        }
+  // ── Export ───────────────────────────────────────────────────────
+  function setupExportBtn() {
+    document.getElementById('export-btn').addEventListener('click', async () => {
+      try {
+        const token = getToken();
+        const res = await fetch(API + '/entries/export/json', {
+          headers: { Authorization: 'Bearer ' + token }
+        });
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'habitpulse-export.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Data exported! 📤');
+      } catch (err) {
+        showToast('Export failed: ' + err.message);
       }
-      localStorage.removeItem('wellness_draft');
-
-      // Reset to today with fresh defaults
-      offset = 0;
-      state = DEFAULT_STATE();
-      applyState();
-      renderStreak();
-      renderWeeklyInsights();
-      showResetBanner();
-    }
-
-    localStorage.setItem('wellness_last_active', today);
+    });
   }
 
-  function showResetBanner() {
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    showToast(`${greeting}! A fresh day is ready 🌅`);
-  }
-
-  // Auto-save draft to localStorage on every state change so we can recover it
-  function saveDraft() {
-    if (offset === 0) {
-      localStorage.setItem('wellness_draft', JSON.stringify(state));
-    }
-  }
-
-  // Schedule a check at the next midnight
-  function scheduleMidnightCheck() {
-    const now = new Date();
-    const msUntilMidnight =
-      new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5).getTime() - now.getTime();
-    setTimeout(() => {
-      checkDailyReset();
-      scheduleMidnightCheck(); // reschedule for the next midnight
-    }, msUntilMidnight);
-  }
-
-  // ── Init ─────────────────────────────────────────────────────────
-  checkDailyReset();
-  loadEntry();
-  renderStreak();
-  renderWeeklyInsights();
-  scheduleMidnightCheck();
 </script>
 </body>
 </html>
