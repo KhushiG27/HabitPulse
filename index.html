@@ -333,10 +333,11 @@
 
 <script>
 // ── API Config ───────────────────────────────────────────────────
-// uses live URL in production, localhost in development
+// on Vercel both frontend and backend are on the same domain so /api works
+// locally we still need the full localhost URL
 const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:5000/api'
-  : 'https://habitpulse-api.onrender.com/api';
+  : '/api';
 const MAX_WATER = 8;
 const moodEmoji = { awful: '😞', bad: '😕', okay: '😐', good: '🙂', great: '😄' };
 

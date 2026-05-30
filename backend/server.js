@@ -10,19 +10,20 @@ const app = express();
 
 app.use(express.json());
 
-// allow requests from the frontend (Live Server runs on 5500)
+// allow requests from frontend - localhost for dev, vercel URL for prod
 app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://127.0.0.1:5500',
     'http://localhost:5500',
     'https://khushig27.github.io',
+    /\.vercel\.app$/,
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// basic rate limiting - 100 requests per 15 min per IP
+// 100 requests per 15 min per IP
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -54,17 +55,33 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong' });
 });
 
-const PORT = process.env.PORT || 5000;
+// connect to MongoDB once and reuse connection (important for serverless)
+let isConnected = false;
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('MongoDB connected');
+async function connectDB() {
+  if (isConnected) return;
+  await mongoose.connect(process.env.MONGO_URI);
+  isConnected = true;
+  console.log('MongoDB connected');
+}
+
+// for local development
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  connectDB().then(() => {
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
-  })
-  .catch((err) => {
+  }).catch(err => {
     console.error('MongoDB connection error:', err.message);
     process.exit(1);
   });
+}
+
+// for Vercel serverless - connect on each cold start
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
+
+module.exports = app;
