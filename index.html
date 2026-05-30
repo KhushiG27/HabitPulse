@@ -16,7 +16,6 @@
       <button class="auth-tab active" id="tab-login-btn">Login</button>
       <button class="auth-tab" id="tab-register-btn">Register</button>
     </div>
-
     <!-- Login Form -->
     <form class="auth-form" id="login-form">
       <div class="auth-field">
@@ -30,7 +29,6 @@
       <div class="auth-error" id="login-error"></div>
       <button type="submit" class="auth-btn">Login</button>
     </form>
-
     <!-- Register Form -->
     <form class="auth-form hidden" id="register-form">
       <div class="auth-field">
@@ -127,7 +125,9 @@
       <span class="ring-label" id="ring-stress-label">5/10</span>
     </div>
   </div>
+
   <div class="cards-wrap">
+    <!-- Mood card -->
     <div class="card" id="card-mood">
       <div class="card-header" data-toggle="mood">
         <h2><span class="icon">😊</span> Mood</h2>
@@ -144,6 +144,7 @@
         </div>
       </div>
     </div>
+    <!-- Water card -->
     <div class="card" id="card-water">
       <div class="card-header" data-toggle="water">
         <h2><span class="icon">💧</span> Water</h2>
@@ -162,6 +163,7 @@
         </div>
       </div>
     </div>
+    <!-- Sleep card -->
     <div class="card" id="card-sleep">
       <div class="card-header" data-toggle="sleep">
         <h2><span class="icon">🌙</span> Sleep</h2>
@@ -180,6 +182,8 @@
         <div class="sleep-duration" id="sleep-duration">8h 0m</div>
       </div>
     </div>
+
+    <!-- Exercise card -->
     <div class="card" id="card-exercise">
       <div class="card-header" data-toggle="exercise">
         <h2><span class="icon">🏃</span> Exercise</h2>
@@ -203,6 +207,7 @@
         </div>
       </div>
     </div>
+    <!-- Stress card -->
     <div class="card" id="card-stress">
       <div class="card-header" data-toggle="stress">
         <h2><span class="icon">🧠</span> Stress</h2>
@@ -215,6 +220,7 @@
         <div class="stress-labels"><span>Calm</span><span>Moderate</span><span>High</span></div>
       </div>
     </div>
+    <!-- Notes card -->
     <div class="card" id="card-notes">
       <div class="card-header" data-toggle="notes">
         <h2><span class="icon">📝</span> Notes</h2>
@@ -225,7 +231,7 @@
         <textarea id="notes" placeholder="How are you feeling today? Any wins, challenges, or reflections..."></textarea>
       </div>
     </div>
-  </div>
+  </div><!-- /cards-wrap -->
   <button class="save-btn" id="save-btn">💾 Save Today's Entry</button>
 </div><!-- /tab-today -->
 
@@ -303,70 +309,455 @@
 <div class="toast" id="toast">Entry saved!</div>
 
 <script>
-  // ── API Config ───────────────────────────────────────────────────
-  const API = 'http://localhost:5000/api';
+// ── Constants & helpers ──────────────────────────────────────────
+const API = 'http://localhost:5000/api';
+const MAX_WATER = 8;
+const moodEmoji = { awful: '😞', bad: '😕', okay: '😐', good: '🙂', great: '😄' };
 
-  function getToken() { return localStorage.getItem('hp_token'); }
-  function getUser()  { return JSON.parse(localStorage.getItem('hp_user') || 'null'); }
+function getToken() { return localStorage.getItem('hp_token'); }
+function getUser()  { return JSON.parse(localStorage.getItem('hp_user') || 'null'); }
 
-  async function apiFetch(path, options = {}) {
-    const token = getToken();
-    const res = await fetch(API + path, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: 'Bearer ' + token } : {}),
-      },
-      ...options,
+async function apiFetch(path, options = {}) {
+  const token = getToken();
+  const res = await fetch(API + path, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
+    },
+    ...options,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Request failed');
+  return data;
+}
+
+// ── State ────────────────────────────────────────────────────────
+let state = { mood: null, water: 0, sleepStart: '22:30', sleepEnd: '06:30', exercise: [], stress: 5, notes: '' };
+let entriesCache = {};
+let offset = 0;
+
+function DEFAULT_STATE() {
+  return { mood: null, water: 0, sleepStart: '22:30', sleepEnd: '06:30', exercise: [], stress: 5, notes: '' };
+}
+
+// ── Sleep calc ───────────────────────────────────────────────────
+function calcSleep(start, end) {
+  const parts = start.split(':').map(Number);
+  const sh = parts[0], sm = parts[1];
+  const parts2 = end.split(':').map(Number);
+  const eh = parts2[0], em = parts2[1];
+  let mins = (eh * 60 + em) - (sh * 60 + sm);
+  if (mins < 0) mins += 24 * 60;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return { h: h, m: m, label: h + 'h ' + m + 'm' };
+}
+
+// ── Date helpers ─────────────────────────────────────────────────
+function getDateKey(off) {
+  if (off === undefined) off = offset;
+  const d = new Date();
+  d.setDate(d.getDate() + off);
+  return d.toISOString().split('T')[0];
+}
+
+function formatDate(off) {
+  if (off === undefined) off = offset;
+  const d = new Date();
+  d.setDate(d.getDate() + off);
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function updateDateLabel() {
+  const label = offset === 0 ? 'Today — ' : offset === -1 ? 'Yesterday — ' : '';
+  document.getElementById('current-date').textContent = label + formatDate();
+  const nextBtn = document.getElementById('next-day');
+  nextBtn.disabled = offset >= 0;
+  nextBtn.style.opacity = offset >= 0 ? '0.3' : '1';
+}
+
+// ── Rings ────────────────────────────────────────────────────────
+function updateRing(id, pct) {
+  const ring = document.getElementById(id);
+  if (!ring) return;
+  const circumference = 2 * Math.PI * 26;
+  ring.style.strokeDashoffset = circumference * (1 - Math.min(Math.max(pct, 0), 1));
+}
+
+// ── Summary / Rings update ───────────────────────────────────────
+function updateSummary() {
+  const sleep = calcSleep(state.sleepStart, state.sleepEnd);
+  document.getElementById('preview-mood').textContent = state.mood ? moodEmoji[state.mood] : '—';
+  document.getElementById('preview-water').textContent = state.water + ' / 8';
+  document.getElementById('preview-sleep').textContent = sleep.label;
+  document.getElementById('preview-exercise').textContent = state.exercise.length + ' done';
+  document.getElementById('preview-stress').textContent = state.stress + ' / 10';
+  const notesEl = document.getElementById('preview-notes');
+  notesEl.textContent = state.notes
+    ? state.notes.substring(0, 30) + (state.notes.length > 30 ? '...' : '')
+    : 'Tap to add';
+  updateRing('ring-water', state.water / MAX_WATER);
+  updateRing('ring-sleep', Math.min((sleep.h + sleep.m / 60) / 8, 1));
+  updateRing('ring-exercise', state.exercise.length / 4);
+  updateRing('ring-stress', 1 - (state.stress - 1) / 9);
+  document.getElementById('ring-water-label').textContent = state.water + '/8';
+  document.getElementById('ring-sleep-label').textContent = sleep.h + 'h';
+  document.getElementById('ring-exercise-label').textContent = state.exercise.length + '/4';
+  document.getElementById('ring-stress-label').textContent = state.stress + '/10';
+}
+
+// ── Water render ─────────────────────────────────────────────────
+function renderWater() {
+  const cups = document.getElementById('water-cups');
+  cups.innerHTML = '';
+  for (let i = 0; i < MAX_WATER; i++) {
+    const c = document.createElement('button');
+    c.className = 'cup' + (i < state.water ? ' filled' : '');
+    c.setAttribute('aria-label', 'Glass ' + (i + 1));
+    c.addEventListener('click', function() {
+      state.water = i < state.water ? i : i + 1;
+      renderWater();
+      updateSummary();
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Request failed');
-    return data;
+    cups.appendChild(c);
+  }
+  document.getElementById('water-count').textContent = state.water;
+}
+
+// ── Exercise render ──────────────────────────────────────────────
+function renderExercise() {
+  document.querySelectorAll('.exercise-item').forEach(function(item) {
+    const done = state.exercise.indexOf(item.dataset.ex) !== -1;
+    item.classList.toggle('done', done);
+    item.setAttribute('aria-checked', done ? 'true' : 'false');
+  });
+}
+
+function toggleExercise(item) {
+  const ex = item.dataset.ex;
+  const idx = state.exercise.indexOf(ex);
+  if (idx === -1) state.exercise.push(ex);
+  else state.exercise.splice(idx, 1);
+  renderExercise();
+  updateSummary();
+}
+
+// ── Apply state to DOM ───────────────────────────────────────────
+function applyState() {
+  document.querySelectorAll('.mood-btn').forEach(function(b) {
+    b.classList.toggle('selected', b.dataset.mood === state.mood);
+  });
+  renderWater();
+  document.getElementById('sleep-start').value = state.sleepStart;
+  document.getElementById('sleep-end').value = state.sleepEnd;
+  const sleep = calcSleep(state.sleepStart, state.sleepEnd);
+  document.getElementById('sleep-duration').textContent = sleep.label;
+  renderExercise();
+  const stressRange = document.getElementById('stress-range');
+  const stressValue = document.getElementById('stress-value');
+  stressRange.value = state.stress;
+  stressValue.textContent = state.stress;
+  stressValue.style.color = 'hsl(' + Math.round(120 - (state.stress - 1) * 12) + ', 70%, 45%)';
+  document.getElementById('notes').value = state.notes;
+  updateSummary();
+}
+
+// ── Toast ────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+// ── Theme ────────────────────────────────────────────────────────
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('toggle-icon').textContent = dark ? '☀️' : '🌙';
+  localStorage.setItem('wellness_theme', dark ? 'dark' : 'light');
+}
+
+// ── Auth helpers ─────────────────────────────────────────────────
+function showApp(user) {
+  document.getElementById('auth-overlay').classList.add('hidden');
+  document.getElementById('app-wrap').classList.remove('hidden');
+  document.getElementById('user-name-pill').textContent = '👤 ' + user.name;
+  // Load initial data
+  loadEntry();
+}
+
+function showAuth() {
+  document.getElementById('auth-overlay').classList.remove('hidden');
+  document.getElementById('app-wrap').classList.add('hidden');
+}
+
+// ── Load / Save entries ──────────────────────────────────────────
+async function loadAllEntries() {
+  try {
+    const entries = await apiFetch('/entries');
+    entriesCache = {};
+    entries.forEach(function(e) { entriesCache[e.date] = e; });
+  } catch (err) {
+    console.error('Failed to load entries:', err.message);
+  }
+}
+
+async function loadEntry() {
+  updateDateLabel();
+  await loadAllEntries();
+  const entry = entriesCache[getDateKey()];
+  if (entry) {
+    state = {
+      mood: entry.mood || null,
+      water: entry.water || 0,
+      sleepStart: entry.sleepStart || '22:30',
+      sleepEnd: entry.sleepEnd || '06:30',
+      exercise: entry.exercise || [],
+      stress: entry.stress || 5,
+      notes: entry.notes || '',
+    };
+  } else {
+    state = DEFAULT_STATE();
+  }
+  applyState();
+  renderStreak();
+}
+
+// ── Streak ───────────────────────────────────────────────────────
+function calcStreak() {
+  var streak = 0;
+  var todayKey = getDateKey(0);
+  var start = entriesCache[todayKey] ? 0 : -1;
+  for (var i = start; i >= -365; i--) {
+    if (entriesCache[getDateKey(i)]) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function renderStreak() {
+  var streak = calcStreak();
+  var todayLogged = !!entriesCache[getDateKey(0)];
+  document.getElementById('streak-num').textContent = streak;
+  var sub = streak === 0
+    ? 'No streak yet — save today to start one!'
+    : todayLogged
+      ? 'day streak — great work! 🌟'
+      : 'day streak — log today to keep it going!';
+  document.getElementById('streak-sub').textContent = sub;
+  var fire = streak >= 14 ? '🔥🔥' : streak >= 7 ? '🔥' : streak >= 3 ? '✨' : '🌱';
+  document.getElementById('streak-fire').textContent = fire;
+  document.getElementById('streak-fire-pill').textContent = fire;
+  document.getElementById('streak-num-pill').textContent = streak;
+
+  var dots = document.getElementById('streak-dots');
+  dots.innerHTML = '';
+  var days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  for (var i = -6; i <= 0; i++) {
+    var key = getDateKey(i);
+    var d = new Date();
+    d.setDate(d.getDate() + i);
+    var dot = document.createElement('div');
+    dot.className = 'streak-dot' + (entriesCache[key] ? ' logged' : '') + (i === 0 ? ' today' : '');
+    dot.textContent = days[d.getDay()];
+    dots.appendChild(dot);
+  }
+}
+
+// ── Weekly Insights ──────────────────────────────────────────────
+function renderWeeklyInsights() {
+  var week = [];
+  for (var i = -6; i <= 0; i++) {
+    var key = getDateKey(i);
+    if (entriesCache[key]) week.push(entriesCache[key]);
+  }
+  var n = week.length;
+
+  if (n === 0) {
+    document.getElementById('ins-water').textContent = '—';
+    document.getElementById('ins-sleep').textContent = '—';
+    document.getElementById('ins-mood').textContent = '—';
+    document.getElementById('ins-stress').textContent = '—';
+    document.getElementById('ins-exercise').textContent = '—';
+    document.getElementById('ins-logged').textContent = '0';
+    document.getElementById('water-bars').innerHTML = '';
+    document.getElementById('sleep-bars').innerHTML = '';
+    document.getElementById('insight-tips').innerHTML = '';
+    return;
   }
 
-  // ── Auth ─────────────────────────────────────────────────────────
-  const authOverlay = document.getElementById('auth-overlay');
-  const appWrap     = document.getElementById('app-wrap');
+  var totalWater = 0, totalSleep = 0, totalStress = 0, activeDays = 0;
+  var moodCounts = {};
+  week.forEach(function(e) {
+    totalWater += e.water || 0;
+    var sl = calcSleep(e.sleepStart || '22:30', e.sleepEnd || '06:30');
+    totalSleep += sl.h + sl.m / 60;
+    totalStress += e.stress || 5;
+    if (e.exercise && e.exercise.length > 0) activeDays++;
+    if (e.mood) moodCounts[e.mood] = (moodCounts[e.mood] || 0) + 1;
+  });
 
-  function showApp(user) {
-    authOverlay.classList.add('hidden');
-    appWrap.classList.remove('hidden');
-    document.getElementById('user-name-pill').textContent = '👤 ' + user.name;
-    init();
+  var avgWater = (totalWater / n).toFixed(1);
+  var avgSleep = (totalSleep / n).toFixed(1);
+  var avgStress = (totalStress / n).toFixed(1);
+
+  var topMood = null;
+  var topCount = 0;
+  Object.keys(moodCounts).forEach(function(m) {
+    if (moodCounts[m] > topCount) { topCount = moodCounts[m]; topMood = m; }
+  });
+
+  document.getElementById('ins-water').textContent = avgWater;
+  document.getElementById('ins-sleep').textContent = avgSleep;
+  document.getElementById('ins-mood').textContent = topMood ? moodEmoji[topMood] : '—';
+  document.getElementById('ins-mood-sub').textContent = topMood ? topMood + ' this week' : 'this week';
+  document.getElementById('ins-stress').textContent = avgStress;
+  document.getElementById('ins-exercise').textContent = activeDays;
+  document.getElementById('ins-logged').textContent = n;
+
+  // Bar charts
+  renderBarChart('water-bars', -6, 0, function(key) {
+    var e = entriesCache[key];
+    return e ? { val: e.water || 0, max: 8 } : null;
+  });
+  renderBarChart('sleep-bars', -6, 0, function(key) {
+    var e = entriesCache[key];
+    if (!e) return null;
+    var sl = calcSleep(e.sleepStart || '22:30', e.sleepEnd || '06:30');
+    return { val: sl.h + sl.m / 60, max: 10 };
+  });
+
+  // Tips
+  var tips = [];
+  if (parseFloat(avgWater) < 6) tips.push({ icon: '💧', text: 'Try to drink more water — aim for 6-8 glasses daily.', cls: 'warn' });
+  else tips.push({ icon: '💧', text: 'Great hydration this week! Keep it up.', cls: 'good' });
+  if (parseFloat(avgSleep) < 7) tips.push({ icon: '🌙', text: 'You averaged less than 7h sleep. Try an earlier bedtime.', cls: 'warn' });
+  else tips.push({ icon: '🌙', text: 'Solid sleep this week — rest is key to recovery.', cls: 'good' });
+  if (parseFloat(avgStress) > 7) tips.push({ icon: '🧠', text: 'High stress detected. Consider a short mindfulness break.', cls: 'warn' });
+  if (activeDays < 3) tips.push({ icon: '🏃', text: 'Only ' + activeDays + ' active day(s) this week. Even a short walk helps!', cls: 'warn' });
+  else tips.push({ icon: '🏃', text: activeDays + ' active days this week — you\'re moving well!', cls: 'good' });
+
+  var tipsEl = document.getElementById('insight-tips');
+  tipsEl.innerHTML = '';
+  tips.forEach(function(tip) {
+    var div = document.createElement('div');
+    div.className = 'tip ' + tip.cls;
+    div.innerHTML = '<span class="tip-icon">' + tip.icon + '</span><span>' + tip.text + '</span>';
+    tipsEl.appendChild(div);
+  });
+}
+
+function renderBarChart(containerId, fromOff, toOff, dataFn) {
+  var container = document.getElementById(containerId);
+  container.innerHTML = '';
+  var days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  var maxVal = 0;
+  var items = [];
+  for (var i = fromOff; i <= toOff; i++) {
+    var key = getDateKey(i);
+    var d = new Date(); d.setDate(d.getDate() + i);
+    var result = dataFn(key);
+    items.push({ day: days[d.getDay()], result: result });
+    if (result && result.val > maxVal) maxVal = result.val;
+  }
+  if (maxVal === 0) maxVal = 1;
+  items.forEach(function(item) {
+    var wrap = document.createElement('div');
+    wrap.className = 'week-bar-wrap';
+    var bar = document.createElement('div');
+    var pct = item.result ? Math.round((item.result.val / maxVal) * 100) : 0;
+    bar.className = 'week-bar' + (item.result ? ' has-data' : '');
+    bar.style.height = Math.max(pct, 3) + '%';
+    var label = document.createElement('div');
+    label.className = 'week-bar-day';
+    label.textContent = item.day;
+    wrap.appendChild(bar);
+    wrap.appendChild(label);
+    container.appendChild(wrap);
+  });
+}
+
+// ── History ──────────────────────────────────────────────────────
+function renderHistory() {
+  renderStreak();
+  var list = document.getElementById('history-list');
+  list.innerHTML = '';
+  var keys = Object.keys(entriesCache).sort(function(a, b) { return b.localeCompare(a); });
+  if (keys.length === 0) {
+    list.innerHTML = '<div class="history-empty">No entries yet. Start logging today!</div>';
+    return;
+  }
+  keys.forEach(function(key) {
+    var e = entriesCache[key];
+    var sl = calcSleep(e.sleepStart || '22:30', e.sleepEnd || '06:30');
+    var card = document.createElement('div');
+    card.className = 'history-card';
+    var dateObj = new Date(key + 'T12:00:00');
+    var dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    var moodStr = e.mood ? moodEmoji[e.mood] : '—';
+    var exStr = e.exercise && e.exercise.length > 0 ? e.exercise.length + ' exercises' : 'No exercise';
+    card.innerHTML =
+      '<div class="hc-date">' + dateStr + '<span class="hc-key">' + key + '</span></div>' +
+      '<div class="hc-stats">' +
+        '<span>😊 ' + moodStr + '</span>' +
+        '<span>💧 ' + (e.water || 0) + '/8</span>' +
+        '<span>🌙 ' + sl.label + '</span>' +
+        '<span>🏃 ' + exStr + '</span>' +
+        '<span>🧠 ' + (e.stress || 5) + '/10</span>' +
+      '</div>' +
+      (e.notes ? '<div class="hc-notes">' + e.notes.substring(0, 80) + (e.notes.length > 80 ? '...' : '') + '</div>' : '');
+    list.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// ALL EVENT LISTENERS ATTACHED AT DOMContentLoaded
+// ════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+
+  // ── Theme: apply saved preference immediately ──────────────────
+  var savedTheme = localStorage.getItem('wellness_theme');
+  if (savedTheme) {
+    applyTheme(savedTheme === 'dark');
+  } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    applyTheme(true);
   }
 
-  function showAuth() {
-    authOverlay.classList.remove('hidden');
-    appWrap.classList.add('hidden');
-  }
+  document.getElementById('theme-toggle').addEventListener('click', function() {
+    applyTheme(document.documentElement.getAttribute('data-theme') !== 'dark');
+  });
 
-  // Check if already logged in
+  // ── Auth: check existing session ──────────────────────────────
   if (getToken() && getUser()) {
     showApp(getUser());
   } else {
     showAuth();
   }
 
-  // Auth tab switching
-  document.getElementById('tab-login-btn').addEventListener('click', () => {
+  // ── Auth tab switching ─────────────────────────────────────────
+  document.getElementById('tab-login-btn').addEventListener('click', function() {
     document.getElementById('tab-login-btn').classList.add('active');
     document.getElementById('tab-register-btn').classList.remove('active');
     document.getElementById('login-form').classList.remove('hidden');
     document.getElementById('register-form').classList.add('hidden');
+    document.getElementById('login-error').textContent = '';
   });
-  document.getElementById('tab-register-btn').addEventListener('click', () => {
+
+  document.getElementById('tab-register-btn').addEventListener('click', function() {
     document.getElementById('tab-register-btn').classList.add('active');
     document.getElementById('tab-login-btn').classList.remove('active');
     document.getElementById('register-form').classList.remove('hidden');
     document.getElementById('login-form').classList.add('hidden');
+    document.getElementById('register-error').textContent = '';
   });
 
-  // Login
-  document.getElementById('login-form').addEventListener('submit', async (e) => {
+  // ── Login form ─────────────────────────────────────────────────
+  document.getElementById('login-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const errEl = document.getElementById('login-error');
+    var errEl = document.getElementById('login-error');
     errEl.textContent = '';
     try {
-      const data = await apiFetch('/auth/login', {
+      var data = await apiFetch('/auth/login', {
         method: 'POST',
         body: JSON.stringify({
           email: document.getElementById('login-email').value,
@@ -381,13 +772,13 @@
     }
   });
 
-  // Register
-  document.getElementById('register-form').addEventListener('submit', async (e) => {
+  // ── Register form ──────────────────────────────────────────────
+  document.getElementById('register-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const errEl = document.getElementById('register-error');
+    var errEl = document.getElementById('register-error');
     errEl.textContent = '';
     try {
-      const data = await apiFetch('/auth/register', {
+      var data = await apiFetch('/auth/register', {
         method: 'POST',
         body: JSON.stringify({
           name: document.getElementById('reg-name').value,
@@ -403,478 +794,167 @@
     }
   });
 
-  // Logout
-  document.getElementById('logout-btn').addEventListener('click', () => {
+  // ── Logout ─────────────────────────────────────────────────────
+  document.getElementById('logout-btn').addEventListener('click', function() {
     localStorage.removeItem('hp_token');
     localStorage.removeItem('hp_user');
+    entriesCache = {};
+    offset = 0;
+    state = DEFAULT_STATE();
     showAuth();
   });
 
-  // ── App Init ─────────────────────────────────────────────────────
-  function init() {
-    applyThemeOnLoad();
-    setupTabSwitching();
-    setupAccordion();
-    setupDateNav();
-    setupWater();
-    setupMood();
-    setupSleep();
-    setupExercise();
-    setupStress();
-    setupNotes();
-    setupSaveBtn();
-    setupExportBtn();
+  // ── Tab switching ──────────────────────────────────────────────
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tab = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(function(b) {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      document.querySelectorAll('.tab-panel').forEach(function(p) {
+        p.classList.remove('active');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      document.getElementById('tab-' + tab).classList.add('active');
+      if (tab === 'insights') renderWeeklyInsights();
+      if (tab === 'history') renderHistory();
+    });
+  });
+
+  // ── Accordion ─────────────────────────────────────────────────
+  document.querySelectorAll('.card-header').forEach(function(header) {
+    header.addEventListener('click', function() {
+      var card = header.closest('.card');
+      var isOpen = card.classList.contains('open');
+      document.querySelectorAll('.card').forEach(function(c) { c.classList.remove('open'); });
+      if (!isOpen) card.classList.add('open');
+    });
+  });
+
+  // ── Date navigation ────────────────────────────────────────────
+  document.getElementById('prev-day').addEventListener('click', function() {
+    offset--;
     loadEntry();
-  }
+  });
 
-  // ── Dark mode ────────────────────────────────────────────────────
-  const root = document.documentElement;
-
-  function applyTheme(dark) {
-    root.setAttribute('data-theme', dark ? 'dark' : 'light');
-    document.getElementById('toggle-icon').textContent = dark ? '☀️' : '🌙';
-    localStorage.setItem('wellness_theme', dark ? 'dark' : 'light');
-  }
-
-  function applyThemeOnLoad() {
-    document.getElementById('theme-toggle').addEventListener('click', () => {
-      applyTheme(root.getAttribute('data-theme') !== 'dark');
-    });
-    const savedTheme = localStorage.getItem('wellness_theme');
-    if (savedTheme) applyTheme(savedTheme === 'dark');
-    else if (window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme(true);
-  }
-
-  // ── Tab switching ────────────────────────────────────────────────
-  function setupTabSwitching() {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tab = btn.dataset.tab;
-        document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        btn.setAttribute('aria-selected','true');
-        document.getElementById('tab-' + tab).classList.add('active');
-        if (tab === 'insights') renderWeeklyInsights();
-        if (tab === 'history') renderHistory();
-      });
-    });
-  }
-
-  // ── Accordion ────────────────────────────────────────────────────
-  function setupAccordion() {
-    document.querySelectorAll('.card-header').forEach(header => {
-      header.addEventListener('click', () => {
-        const card = header.closest('.card');
-        const isOpen = card.classList.contains('open');
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('open'));
-        if (!isOpen) card.classList.add('open');
-      });
-    });
-  }
-
-  // ── Date navigation ──────────────────────────────────────────────
-  let offset = 0;
-
-  function getDateKey(off = offset) {
-    const d = new Date();
-    d.setDate(d.getDate() + off);
-    return d.toISOString().split('T')[0];
-  }
-
-  function formatDate(off = offset) {
-    const d = new Date();
-    d.setDate(d.getDate() + off);
-    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-  }
-
-  function updateDateLabel() {
-    const label = offset === 0 ? 'Today — ' : offset === -1 ? 'Yesterday — ' : '';
-    document.getElementById('current-date').textContent = label + formatDate();
-    document.getElementById('next-day').disabled = offset >= 0;
-    document.getElementById('next-day').style.opacity = offset >= 0 ? '0.3' : '1';
-  }
-
-  function setupDateNav() {
-    document.getElementById('prev-day').addEventListener('click', () => { offset--; loadEntry(); });
-    document.getElementById('next-day').addEventListener('click', () => { if (offset < 0) { offset++; loadEntry(); } });
-  }
-
-  // ── State ────────────────────────────────────────────────────────
-  let state = { mood: null, water: 0, sleepStart: '22:30', sleepEnd: '06:30', exercise: [], stress: 5, notes: '' };
-
-  function DEFAULT_STATE() {
-    return { mood: null, water: 0, sleepStart: '22:30', sleepEnd: '06:30', exercise: [], stress: 5, notes: '' };
-  }
-
-  // ── Water ────────────────────────────────────────────────────────
-  const MAX_WATER = 8;
-
-  function renderWater() {
-    const cups = document.getElementById('water-cups');
-    cups.innerHTML = '';
-    for (let i = 0; i < MAX_WATER; i++) {
-      const c = document.createElement('button');
-      c.className = 'cup' + (i < state.water ? ' filled' : '');
-      c.setAttribute('aria-label', `Glass ${i + 1}`);
-      c.addEventListener('click', () => { state.water = i < state.water ? i : i + 1; renderWater(); updateSummary(); });
-      cups.appendChild(c);
+  document.getElementById('next-day').addEventListener('click', function() {
+    if (offset < 0) {
+      offset++;
+      loadEntry();
     }
-    document.getElementById('water-count').textContent = state.water;
-  }
+  });
 
-  function setupWater() {
-    document.getElementById('water-add').addEventListener('click', () => {
-      if (state.water < MAX_WATER) { state.water++; renderWater(); updateSummary(); }
+  // ── Mood ───────────────────────────────────────────────────────
+  document.getElementById('mood-grid').addEventListener('click', function(e) {
+    var btn = e.target.closest('.mood-btn');
+    if (!btn) return;
+    state.mood = btn.dataset.mood;
+    document.querySelectorAll('.mood-btn').forEach(function(b) {
+      b.classList.toggle('selected', b === btn);
     });
-    document.getElementById('water-remove').addEventListener('click', () => {
-      if (state.water > 0) { state.water--; renderWater(); updateSummary(); }
-    });
-  }
-
-  // ── Mood ─────────────────────────────────────────────────────────
-  function setupMood() {
-    document.getElementById('mood-grid').addEventListener('click', e => {
-      const btn = e.target.closest('.mood-btn');
-      if (!btn) return;
-      state.mood = btn.dataset.mood;
-      document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('selected', b === btn));
-      updateSummary();
-    });
-  }
-
-  // ── Sleep ────────────────────────────────────────────────────────
-  function calcSleep(start, end) {
-    const [sh, sm] = start.split(':').map(Number);
-    const [eh, em] = end.split(':').map(Number);
-    let mins = (eh * 60 + em) - (sh * 60 + sm);
-    if (mins < 0) mins += 24 * 60;
-    const h = Math.floor(mins / 60), m = mins % 60;
-    return { h, m, label: `${h}h ${m}m` };
-  }
-
-  function updateSleepDisplay() {
-    const { label } = calcSleep(state.sleepStart, state.sleepEnd);
-    document.getElementById('sleep-duration').textContent = label;
     updateSummary();
-  }
+  });
 
-  function setupSleep() {
-    document.getElementById('sleep-start').addEventListener('change', e => { state.sleepStart = e.target.value; updateSleepDisplay(); });
-    document.getElementById('sleep-end').addEventListener('change', e => { state.sleepEnd = e.target.value; updateSleepDisplay(); });
-  }
+  // ── Water ──────────────────────────────────────────────────────
+  document.getElementById('water-add').addEventListener('click', function() {
+    if (state.water < MAX_WATER) { state.water++; renderWater(); updateSummary(); }
+  });
 
-  // ── Exercise ─────────────────────────────────────────────────────
-  function toggleExercise(item) {
-    const ex = item.dataset.ex;
-    const idx = state.exercise.indexOf(ex);
-    if (idx === -1) state.exercise.push(ex); else state.exercise.splice(idx, 1);
-    renderExercise(); updateSummary();
-  }
+  document.getElementById('water-remove').addEventListener('click', function() {
+    if (state.water > 0) { state.water--; renderWater(); updateSummary(); }
+  });
 
-  function renderExercise() {
-    document.querySelectorAll('.exercise-item').forEach(item => {
-      const done = state.exercise.includes(item.dataset.ex);
-      item.classList.toggle('done', done);
-      item.setAttribute('aria-checked', done);
-    });
-  }
+  // ── Sleep ──────────────────────────────────────────────────────
+  document.getElementById('sleep-start').addEventListener('change', function(e) {
+    state.sleepStart = e.target.value;
+    var sleep = calcSleep(state.sleepStart, state.sleepEnd);
+    document.getElementById('sleep-duration').textContent = sleep.label;
+    updateSummary();
+  });
 
-  function setupExercise() {
-    document.getElementById('exercise-list').addEventListener('click', e => {
-      const item = e.target.closest('.exercise-item');
-      if (item) toggleExercise(item);
-    });
-    document.getElementById('exercise-list').addEventListener('keydown', e => {
-      if (e.key === ' ' || e.key === 'Enter') {
-        const item = e.target.closest('.exercise-item');
-        if (item) { e.preventDefault(); toggleExercise(item); }
-      }
-    });
-  }
+  document.getElementById('sleep-end').addEventListener('change', function(e) {
+    state.sleepEnd = e.target.value;
+    var sleep = calcSleep(state.sleepStart, state.sleepEnd);
+    document.getElementById('sleep-duration').textContent = sleep.label;
+    updateSummary();
+  });
 
-  // ── Stress ───────────────────────────────────────────────────────
-  function setupStress() {
-    const stressRange = document.getElementById('stress-range');
-    const stressValue = document.getElementById('stress-value');
-    stressRange.addEventListener('input', () => {
-      state.stress = parseInt(stressRange.value);
-      stressValue.textContent = state.stress;
-      stressValue.style.color = `hsl(${Math.round(120 - (state.stress - 1) * 12)}, 70%, 45%)`;
-      updateSummary();
-    });
-  }
+  // ── Exercise ───────────────────────────────────────────────────
+  document.getElementById('exercise-list').addEventListener('click', function(e) {
+    var item = e.target.closest('.exercise-item');
+    if (item) toggleExercise(item);
+  });
 
-  // ── Notes ────────────────────────────────────────────────────────
-  function setupNotes() {
-    document.getElementById('notes').addEventListener('input', e => { state.notes = e.target.value; });
-  }
-
-  // ── Summary / Rings ──────────────────────────────────────────────
-  const moodEmoji = { awful: '😞', bad: '😕', okay: '😐', good: '🙂', great: '😄' };
-
-  function updateSummary() {
-    document.getElementById('preview-mood').textContent = state.mood ? moodEmoji[state.mood] : '—';
-    document.getElementById('preview-water').textContent = `${state.water} / 8`;
-    const { label, h, m } = calcSleep(state.sleepStart, state.sleepEnd);
-    document.getElementById('preview-sleep').textContent = label;
-    document.getElementById('preview-exercise').textContent = `${state.exercise.length} done`;
-    document.getElementById('preview-stress').textContent = `${state.stress} / 10`;
-    document.getElementById('preview-notes').textContent = state.notes ? state.notes.substring(0,30) + (state.notes.length > 30 ? '...' : '') : 'Tap to add';
-    updateRing('ring-water', state.water / MAX_WATER);
-    updateRing('ring-sleep', Math.min((h + m / 60) / 8, 1));
-    updateRing('ring-exercise', state.exercise.length / 4);
-    updateRing('ring-stress', 1 - (state.stress - 1) / 9);
-    document.getElementById('ring-water-label').textContent = `${state.water}/8`;
-    document.getElementById('ring-sleep-label').textContent = `${h}h`;
-    document.getElementById('ring-exercise-label').textContent = `${state.exercise.length}/4`;
-    document.getElementById('ring-stress-label').textContent = `${state.stress}/10`;
-  }
-
-  function updateRing(id, pct) {
-    const ring = document.getElementById(id);
-    const circumference = 2 * Math.PI * 26;
-    ring.style.strokeDashoffset = circumference * (1 - pct);
-  }
-
-  // ── Save / Load via API ──────────────────────────────────────────
-  function setupSaveBtn() {
-    document.getElementById('save-btn').addEventListener('click', async () => {
-      try {
-        await apiFetch('/entries/' + getDateKey(), {
-          method: 'POST',
-          body: JSON.stringify(state),
-        });
-        showToast('Entry saved! 🌿');
-        renderStreak();
-        renderWeeklyInsights();
-      } catch (err) {
-        showToast('Error: ' + err.message);
-      }
-    });
-  }
-
-  // Cache entries locally to avoid repeated API calls
-  let entriesCache = {};
-
-  async function loadAllEntries() {
-    try {
-      const entries = await apiFetch('/entries');
-      entriesCache = {};
-      entries.forEach(e => { entriesCache[e.date] = e; });
-    } catch (err) {
-      console.error('Failed to load entries:', err.message);
+  document.getElementById('exercise-list').addEventListener('keydown', function(e) {
+    if (e.key === ' ' || e.key === 'Enter') {
+      var item = e.target.closest('.exercise-item');
+      if (item) { e.preventDefault(); toggleExercise(item); }
     }
-  }
+  });
 
-  async function loadEntry() {
-    updateDateLabel();
-    await loadAllEntries();
-    const entry = entriesCache[getDateKey()];
-    state = entry ? {
-      mood: entry.mood,
-      water: entry.water,
-      sleepStart: entry.sleepStart,
-      sleepEnd: entry.sleepEnd,
-      exercise: entry.exercise,
-      stress: entry.stress,
-      notes: entry.notes,
-    } : DEFAULT_STATE();
-    applyState();
-    renderStreak();
-    renderWeeklyInsights();
-  }
-
-  function applyState() {
-    document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('selected', b.dataset.mood === state.mood));
-    renderWater();
-    document.getElementById('sleep-start').value = state.sleepStart;
-    document.getElementById('sleep-end').value = state.sleepEnd;
-    updateSleepDisplay();
-    renderExercise();
-    const stressRange = document.getElementById('stress-range');
-    const stressValue = document.getElementById('stress-value');
-    stressRange.value = state.stress;
+  // ── Stress ─────────────────────────────────────────────────────
+  document.getElementById('stress-range').addEventListener('input', function() {
+    state.stress = parseInt(this.value);
+    var stressValue = document.getElementById('stress-value');
     stressValue.textContent = state.stress;
-    stressValue.style.color = `hsl(${Math.round(120 - (state.stress - 1) * 12)}, 70%, 45%)`;
-    document.getElementById('notes').value = state.notes;
+    stressValue.style.color = 'hsl(' + Math.round(120 - (state.stress - 1) * 12) + ', 70%, 45%)';
     updateSummary();
-  }
+  });
 
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
-  }
+  // ── Notes ──────────────────────────────────────────────────────
+  document.getElementById('notes').addEventListener('input', function(e) {
+    state.notes = e.target.value;
+    updateSummary();
+  });
 
-  // ── Streak ───────────────────────────────────────────────────────
-  function getKeyForOffset(off) {
-    const d = new Date();
-    d.setDate(d.getDate() + off);
-    return d.toISOString().split('T')[0];
-  }
-
-  function calcStreak() {
-    let streak = 0;
-    const todayKey = getKeyForOffset(0);
-    let start = entriesCache[todayKey] ? 0 : -1;
-    for (let i = start; i >= -365; i--) {
-      if (entriesCache[getKeyForOffset(i)]) streak++;
-      else break;
+  // ── Save button ────────────────────────────────────────────────
+  document.getElementById('save-btn').addEventListener('click', async function() {
+    var btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Saving...';
+    try {
+      await apiFetch('/entries/' + getDateKey(), {
+        method: 'POST',
+        body: JSON.stringify(state),
+      });
+      // Update cache immediately
+      entriesCache[getDateKey()] = Object.assign({ date: getDateKey() }, state);
+      showToast('Entry saved! 🌿');
+      renderStreak();
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💾 Save Today\'s Entry';
     }
-    return streak;
-  }
+  });
 
-  function renderStreak() {
-    const streak = calcStreak();
-    const todayLogged = !!entriesCache[getKeyForOffset(0)];
-    document.getElementById('streak-num').textContent = streak;
-    document.getElementById('streak-sub').textContent =
-      streak === 0 ? 'No streak yet — save today to start one!'
-      : todayLogged ? 'day streak — great work! 🌟'
-      : 'day streak — log today to keep it going!';
-    const fire = streak >= 14 ? '🔥🔥' : streak >= 7 ? '🔥' : streak >= 3 ? '✨' : '🌱';
-    document.getElementById('streak-fire').textContent = fire;
-    document.getElementById('streak-fire-pill').textContent = fire;
-    document.getElementById('streak-num-pill').textContent = streak;
-    const dots = document.getElementById('streak-dots');
-    dots.innerHTML = '';
-    const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-    for (let i = -6; i <= 0; i++) {
-      const key = getKeyForOffset(i);
-      const logged = !!entriesCache[key];
-      const d = new Date(); d.setDate(d.getDate() + i);
-      const dot = document.createElement('div');
-      dot.className = 'streak-dot' + (logged ? ' logged' : '') + (i === 0 ? ' today' : '');
-      dot.textContent = days[d.getDay()];
-      if (logged) dot.title = key + ' — logged ✓';
-      dots.appendChild(dot);
+  // ── Export button ──────────────────────────────────────────────
+  document.getElementById('export-btn').addEventListener('click', async function() {
+    try {
+      var token = getToken();
+      var res = await fetch(API + '/entries/export/json', {
+        headers: { Authorization: 'Bearer ' + token },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      var blob = await res.blob();
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'habitpulse-export.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Export downloaded! 📤');
+    } catch (err) {
+      showToast('Export error: ' + err.message);
     }
-  }
+  });
 
-  // ── Weekly Insights ──────────────────────────────────────────────
-  function renderWeeklyInsights() {
-    const entries = [];
-    for (let i = -6; i <= 0; i++) {
-      const e = entriesCache[getKeyForOffset(i)];
-      if (e) entries.push(e);
-    }
-    const n = entries.length;
-    document.getElementById('ins-water').textContent = n ? (entries.reduce((s,e) => s + e.water, 0) / n).toFixed(1) : '—';
-    if (n) {
-      const totalSleep = entries.reduce((s,e) => { const {h,m} = calcSleep(e.sleepStart,e.sleepEnd); return s + h + m/60; }, 0);
-      document.getElementById('ins-sleep').textContent = (totalSleep / n).toFixed(1);
-    } else { document.getElementById('ins-sleep').textContent = '—'; }
-    const moodEntries = entries.filter(e => e.mood);
-    if (moodEntries.length) {
-      const counts = {};
-      moodEntries.forEach(e => { counts[e.mood] = (counts[e.mood] || 0) + 1; });
-      const top = Object.entries(counts).sort((a,b) => b[1]-a[1])[0][0];
-      document.getElementById('ins-mood').textContent = moodEmoji[top];
-      document.getElementById('ins-mood-sub').textContent = top + ' (most common)';
-    } else { document.getElementById('ins-mood').textContent = '—'; document.getElementById('ins-mood-sub').textContent = 'this week'; }
-    document.getElementById('ins-stress').textContent = n ? (entries.reduce((s,e) => s + e.stress, 0) / n).toFixed(1) : '—';
-    document.getElementById('ins-exercise').textContent = n ? entries.filter(e => e.exercise && e.exercise.length > 0).length : '—';
-    document.getElementById('ins-logged').textContent = n;
-    renderBars('water-bars', i => { const e = entriesCache[getKeyForOffset(i)]; return e ? e.water : null; }, 8, v => `${v} glasses`);
-    renderBars('sleep-bars', i => { const e = entriesCache[getKeyForOffset(i)]; if (!e) return null; const {h,m} = calcSleep(e.sleepStart,e.sleepEnd); return h+m/60; }, 9, v => `${v.toFixed(1)}h`);
-    renderTips(entries, n);
-  }
-
-  function renderBars(containerId, valueFn, maxDefault, labelFn) {
-    const bars = document.getElementById(containerId);
-    bars.innerHTML = '';
-    const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-    const values = [];
-    for (let i = -6; i <= 0; i++) {
-      const d = new Date(); d.setDate(d.getDate() + i);
-      const val = valueFn(i);
-      values.push({ day: days[d.getDay()], val, hasData: val !== null });
-    }
-    const max = Math.max(...values.map(v => v.val || 0), maxDefault);
-    values.forEach(v => {
-      const wrap = document.createElement('div'); wrap.className = 'week-bar-wrap';
-      const bar = document.createElement('div'); bar.className = 'week-bar' + (v.hasData ? ' has-data' : '');
-      bar.style.height = (v.val != null ? Math.max((v.val / max) * 52, 3) : 3) + 'px';
-      bar.title = v.hasData ? labelFn(v.val) : 'No data';
-      const label = document.createElement('div'); label.className = 'week-bar-day'; label.textContent = v.day;
-      wrap.appendChild(bar); wrap.appendChild(label); bars.appendChild(wrap);
-    });
-  }
-
-  function renderTips(entries, n) {
-    const tips = document.getElementById('insight-tips');
-    tips.innerHTML = '';
-    if (!n) { tips.innerHTML = '<div class="tip">Start logging to see personalized tips here!</div>'; return; }
-    const avgWater = entries.reduce((s,e) => s+e.water,0)/n;
-    const avgStress = entries.reduce((s,e) => s+e.stress,0)/n;
-    const activeDays = entries.filter(e => e.exercise && e.exercise.length>0).length;
-    if (avgWater < 5) tips.innerHTML += '<div class="tip warn"><span class="tip-icon">💧</span>Your average water intake is low. Try to drink at least 6 glasses daily.</div>';
-    else tips.innerHTML += '<div class="tip good"><span class="tip-icon">💧</span>Great hydration this week! Keep it up.</div>';
-    if (avgStress > 7) tips.innerHTML += '<div class="tip warn"><span class="tip-icon">🧠</span>High stress levels detected. Consider adding relaxation or breathing exercises.</div>';
-    if (activeDays < 3) tips.innerHTML += '<div class="tip warn"><span class="tip-icon">🏃</span>Try to be active at least 3 days a week for better health.</div>';
-    else tips.innerHTML += '<div class="tip good"><span class="tip-icon">🏃</span>You were active ' + activeDays + ' days this week. Excellent!</div>';
-  }
-
-  // ── History ──────────────────────────────────────────────────────
-  function renderHistory() {
-    renderStreak();
-    const list = document.getElementById('history-list');
-    list.innerHTML = '';
-    const entries = [];
-    for (let i = 0; i >= -29; i--) {
-      const key = getKeyForOffset(i);
-      const e = entriesCache[key];
-      if (e) entries.push({ ...e, off: i });
-    }
-    if (!entries.length) {
-      list.innerHTML = '<div class="history-empty">No entries yet. Start logging to see your history here!</div>';
-      return;
-    }
-    entries.forEach(e => {
-      const { h, m } = calcSleep(e.sleepStart || '22:30', e.sleepEnd || '06:30');
-      const d = new Date(e.date + 'T00:00:00');
-      const label = e.off === 0 ? 'Today' : e.off === -1 ? 'Yesterday' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      const card = document.createElement('div');
-      card.className = 'history-card';
-      card.innerHTML = `
-        <div class="hc-date">${label}<span class="hc-key">${e.date}</span></div>
-        <div class="hc-stats">
-          <span title="Mood">${e.mood ? moodEmoji[e.mood] : '—'}</span>
-          <span title="Water">💧 ${e.water}/8</span>
-          <span title="Sleep">🌙 ${h}h${m > 0 ? m+'m' : ''}</span>
-          <span title="Exercise">🏃 ${e.exercise ? e.exercise.length : 0} done</span>
-          <span title="Stress">🧠 ${e.stress}/10</span>
-        </div>
-        ${e.notes ? `<div class="hc-notes">${e.notes.substring(0,80)}${e.notes.length > 80 ? '...' : ''}</div>` : ''}
-      `;
-      list.appendChild(card);
-    });
-  }
-
-  // ── Export ───────────────────────────────────────────────────────
-  function setupExportBtn() {
-    document.getElementById('export-btn').addEventListener('click', async () => {
-      try {
-        const token = getToken();
-        const res = await fetch(API + '/entries/export/json', {
-          headers: { Authorization: 'Bearer ' + token }
-        });
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'habitpulse-export.json';
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast('Data exported! 📤');
-      } catch (err) {
-        showToast('Export failed: ' + err.message);
-      }
-    });
-  }
-
+}); // end DOMContentLoaded
 </script>
 </body>
 </html>
