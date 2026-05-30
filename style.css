@@ -686,3 +686,142 @@ input[type="range"] {
   transition: all 0.2s;
 }
 .export-btn:hover { background: var(--primary); color: #fff; }
+
+/* ── Export Modal ───────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-box {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+  width: 100%;
+  max-width: 780px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.modal-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.modal-close:hover { border-color: var(--danger); color: var(--danger); }
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.modal-dl-btn {
+  padding: 9px 20px;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.modal-dl-btn.csv { background: #43c6ac; color: #fff; }
+.modal-dl-btn.json { background: var(--primary); color: #fff; }
+.modal-dl-btn:hover { opacity: 0.85; }
+
+.modal-table-wrap {
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 16px 22px;
+  flex: 1;
+}
+
+.modal-loading {
+  text-align: center;
+  color: var(--muted);
+  padding: 40px 0;
+  font-size: 0.9rem;
+}
+
+.export-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.export-table th {
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 700;
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 2px solid var(--primary);
+  position: sticky;
+  top: 0;
+}
+
+.export-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: top;
+}
+
+.export-table tr:hover td { background: var(--primary-light); }
+
+.export-table .notes-cell {
+  max-width: 160px;
+  color: var(--muted);
+  font-style: italic;
+  font-size: 0.78rem;
+}
+
+.export-count {
+  text-align: right;
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-top: 10px;
+}
+
+@media (max-width: 500px) {
+  .modal-actions { flex-direction: column; }
+  .modal-dl-btn { width: 100%; text-align: center; }
+}

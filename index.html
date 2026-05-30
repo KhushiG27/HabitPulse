@@ -283,7 +283,7 @@
   </div>
   <div class="insight-tips" id="insight-tips"></div>
   <div class="export-wrap">
-    <button class="export-btn" id="export-btn">📤 Export My Data (JSON)</button>
+    <button class="export-btn" id="export-btn">� Preview & Export My Data</button>
   </div>
 </div><!-- /tab-insights -->
 
@@ -303,6 +303,23 @@
   </div>
   <div class="history-list" id="history-list"></div>
 </div><!-- /tab-history -->
+
+<!-- ═══════════════ EXPORT MODAL ═══════════════ -->
+<div class="modal-overlay hidden" id="export-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>📊 My HabitPulse Data</h2>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-dl-btn csv" id="dl-csv">⬇️ Download CSV</button>
+      <button class="modal-dl-btn json" id="dl-json">⬇️ Download JSON</button>
+    </div>
+    <div class="modal-table-wrap" id="modal-table-wrap">
+      <p class="modal-loading">Loading your data...</p>
+    </div>
+  </div>
+</div>
 
 </div><!-- /app-wrap -->
 
@@ -931,28 +948,141 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // ── Export button ──────────────────────────────────────────────
+  // ── Export button → open modal ────────────────────────────────
   document.getElementById('export-btn').addEventListener('click', async function() {
-    try {
-      var token = getToken();
-      var res = await fetch(API + '/entries/export/json', {
-        headers: { Authorization: 'Bearer ' + token },
-      });
-      if (!res.ok) throw new Error('Export failed');
-      var blob = await res.blob();
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = 'habitpulse-export.json';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast('Export downloaded! 📤');
-    } catch (err) {
-      showToast('Export error: ' + err.message);
+    openExportModal();
+  });
+
+  document.getElementById('modal-close').addEventListener('click', function() {
+    document.getElementById('export-modal').classList.add('hidden');
+  });
+
+  document.getElementById('export-modal').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('export-modal')) {
+      document.getElementById('export-modal').classList.add('hidden');
     }
   });
+
+  document.getElementById('dl-csv').addEventListener('click', function() {
+    downloadCSV();
+  });
+
+  document.getElementById('dl-json').addEventListener('click', function() {
+    downloadJSON();
+  });
+
+// ── Export modal ─────────────────────────────────────────────────
+var exportData = [];
+
+async function openExportModal() {
+  var modal = document.getElementById('export-modal');
+  var wrap = document.getElementById('modal-table-wrap');
+  modal.classList.remove('hidden');
+  wrap.innerHTML = '<p class="modal-loading">⏳ Loading your data...</p>';
+
+  try {
+    var token = getToken();
+    var res = await fetch(API + '/entries/export/json', {
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    if (!res.ok) throw new Error('Failed to load data');
+    var data = await res.json();
+    exportData = data.entries || [];
+
+    if (exportData.length === 0) {
+      wrap.innerHTML = '<p class="modal-loading">No entries found. Start logging to see your data here!</p>';
+      return;
+    }
+
+    // Build table
+    var html = '<table class="export-table">';
+    html += '<thead><tr>' +
+      '<th>Date</th>' +
+      '<th>Mood</th>' +
+      '<th>Water</th>' +
+      '<th>Sleep</th>' +
+      '<th>Exercise</th>' +
+      '<th>Stress</th>' +
+      '<th>Notes</th>' +
+    '</tr></thead><tbody>';
+
+    var moodMap = { awful: '😞 Awful', bad: '😕 Bad', okay: '😐 Okay', good: '🙂 Good', great: '😄 Great' };
+
+    exportData.forEach(function(e) {
+      var sl = calcSleep(e.sleepStart || '22:30', e.sleepEnd || '06:30');
+      var exList = e.exercise && e.exercise.length > 0 ? e.exercise.join(', ') : '—';
+      var moodStr = e.mood ? (moodMap[e.mood] || e.mood) : '—';
+      var notesStr = e.notes ? e.notes.substring(0, 40) + (e.notes.length > 40 ? '...' : '') : '—';
+      var stressColor = e.stress <= 3 ? '#43c6ac' : e.stress <= 6 ? '#f6ad55' : '#ff6b6b';
+      html += '<tr>' +
+        '<td><strong>' + e.date + '</strong></td>' +
+        '<td>' + moodStr + '</td>' +
+        '<td>💧 ' + (e.water || 0) + '/8</td>' +
+        '<td>🌙 ' + sl.label + '</td>' +
+        '<td>' + exList + '</td>' +
+        '<td><span style="color:' + stressColor + ';font-weight:700">' + (e.stress || 5) + '/10</span></td>' +
+        '<td class="notes-cell">' + notesStr + '</td>' +
+      '</tr>';
+    });
+
+    html += '</tbody></table>';
+    html += '<p class="export-count">Showing ' + exportData.length + ' entries</p>';
+    wrap.innerHTML = html;
+
+  } catch (err) {
+    wrap.innerHTML = '<p class="modal-loading" style="color:var(--danger)">Error: ' + err.message + '</p>';
+  }
+}
+
+function downloadCSV() {
+  if (exportData.length === 0) { showToast('No data to export'); return; }
+  var rows = [['Date', 'Mood', 'Water (glasses)', 'Sleep Start', 'Sleep End', 'Sleep Duration', 'Exercise', 'Stress (1-10)', 'Notes']];
+  exportData.forEach(function(e) {
+    var sl = calcSleep(e.sleepStart || '22:30', e.sleepEnd || '06:30');
+    var exList = e.exercise && e.exercise.length > 0 ? e.exercise.join(' | ') : '';
+    var notes = (e.notes || '').replace(/"/g, '""');
+    rows.push([
+      e.date,
+      e.mood || '',
+      e.water || 0,
+      e.sleepStart || '22:30',
+      e.sleepEnd || '06:30',
+      sl.label,
+      exList,
+      e.stress || 5,
+      '"' + notes + '"'
+    ]);
+  });
+  var csv = rows.map(function(r) { return r.join(','); }).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  triggerDownload(blob, 'habitpulse-data.csv');
+  showToast('CSV downloaded! 📊');
+}
+
+function downloadJSON() {
+  if (exportData.length === 0) { showToast('No data to export'); return; }
+  var user = getUser();
+  var payload = {
+    exportedAt: new Date().toISOString(),
+    user: user ? user.email : '',
+    totalEntries: exportData.length,
+    entries: exportData
+  };
+  var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  triggerDownload(blob, 'habitpulse-data.json');
+  showToast('JSON downloaded! 📄');
+}
+
+function triggerDownload(blob, filename) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 }); // end DOMContentLoaded
 </script>

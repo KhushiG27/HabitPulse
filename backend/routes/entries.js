@@ -40,6 +40,26 @@ router.post('/:date', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/entries/export/json
+// @desc    Export all user entries as JSON
+// @access  Private
+router.get('/export/json', protect, async (req, res) => {
+  try {
+    const entries = await Entry.find({ user: req.user._id }).sort({ date: -1 });
+    res.setHeader('Content-Disposition', 'attachment; filename=habitpulse-export.json');
+    res.setHeader('Content-Type', 'application/json');
+    res.json({
+      exportedAt: new Date().toISOString(),
+      user: req.user.email,
+      totalEntries: entries.length,
+      entries,
+    });
+  } catch (error) {
+    console.error('Export error:', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/entries/:date
 // @desc    Get entry for a specific date
 // @access  Private
@@ -151,27 +171,6 @@ router.get('/analytics/weekly', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('Analytics error:', error.message);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   GET /api/entries/export/json
-// @desc    Export all user entries as JSON
-// @access  Private
-router.get('/export/json', protect, async (req, res) => {
-  try {
-    const entries = await Entry.find({ user: req.user._id }).sort({ date: -1 });
-
-    res.setHeader('Content-Disposition', 'attachment; filename=habitpulse-export.json');
-    res.setHeader('Content-Type', 'application/json');
-    res.json({
-      exportedAt: new Date().toISOString(),
-      user: req.user.email,
-      totalEntries: entries.length,
-      entries,
-    });
-  } catch (error) {
-    console.error('Export error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 });
