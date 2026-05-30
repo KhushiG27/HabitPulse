@@ -3,40 +3,61 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #f7f5ff;
+  --bg: #f8f7ff;
   --card: #ffffff;
-  --primary: #7c3aed;
-  --primary-light: #ede9fe;
-  --primary-dark: #5b21b6;
-  --accent: #059669;
-  --accent-light: #d1fae5;
-  --danger: #dc2626;
-  --warning: #d97706;
-  --text: #1e1b4b;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --radius: 14px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(124,58,237,0.06);
-  --shadow-md: 0 4px 16px rgba(124,58,237,0.12);
-  --topbar-h: 58px;
-  --tabnav-h: 54px;
+
+  /* each habit gets its own color */
+  --color-mood:     #f59e0b;
+  --color-mood-bg:  #fffbeb;
+  --color-water:    #0ea5e9;
+  --color-water-bg: #f0f9ff;
+  --color-sleep:    #8b5cf6;
+  --color-sleep-bg: #f5f3ff;
+  --color-exercise: #10b981;
+  --color-ex-bg:    #ecfdf5;
+  --color-stress:   #ef4444;
+  --color-stress-bg:#fff1f2;
+  --color-notes:    #f97316;
+  --color-notes-bg: #fff7ed;
+
+  --primary:        #7c3aed;
+  --primary-light:  #ede9fe;
+  --primary-dark:   #5b21b6;
+  --accent:         #10b981;
+  --accent-light:   #d1fae5;
+  --danger:         #ef4444;
+  --warning:        #f59e0b;
+  --text:           #18181b;
+  --muted:          #71717a;
+  --border:         #e4e4e7;
+  --radius:         14px;
+  --shadow:         0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-md:      0 4px 20px rgba(124,58,237,0.13);
+  --topbar-h:       58px;
+  --tabnav-h:       54px;
 }
 
 [data-theme="dark"] {
-  --bg: #0d0d14;
-  --card: #16162a;
-  --primary: #a78bfa;
-  --primary-light: #1e1b4b;
-  --primary-dark: #7c3aed;
-  --accent: #34d399;
-  --accent-light: #064e3b;
-  --danger: #f87171;
-  --warning: #fbbf24;
-  --text: #f1f0ff;
-  --muted: #9ca3af;
-  --border: #2d2d4e;
-  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
-  --shadow-md: 0 4px 20px rgba(0,0,0,0.4);
+  --bg:             #0f0f13;
+  --card:           #18181f;
+  --color-mood-bg:  #2d2410;
+  --color-water-bg: #0c1e2d;
+  --color-sleep-bg: #1e1730;
+  --color-ex-bg:    #0d2318;
+  --color-stress-bg:#2d1010;
+  --color-notes-bg: #2d1a0a;
+  --primary:        #a78bfa;
+  --primary-light:  #1e1b4b;
+  --primary-dark:   #7c3aed;
+  --accent:         #34d399;
+  --accent-light:   #064e3b;
+  --danger:         #f87171;
+  --warning:        #fbbf24;
+  --text:           #fafafa;
+  --muted:          #a1a1aa;
+  --border:         #27272a;
+  --shadow:         0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3);
+  --shadow-md:      0 4px 20px rgba(0,0,0,0.5);
 }
 
 body {
@@ -445,7 +466,69 @@ input[type="number"]:focus { border-color: var(--primary); }
   color: #fff;
 }
 
-/* notes */
+/* greeting bar */
+.greeting-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, var(--primary) 0%, #0ea5e9 100%);
+  border-radius: var(--radius);
+  color: #fff;
+}
+#greeting-text {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+#greeting-sub {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+/* color-coded card headers */
+#card-mood   .card-header { border-left: 4px solid var(--color-mood); }
+#card-water  .card-header { border-left: 4px solid var(--color-water); }
+#card-sleep  .card-header { border-left: 4px solid var(--color-sleep); }
+#card-exercise .card-header { border-left: 4px solid var(--color-exercise); }
+#card-stress .card-header { border-left: 4px solid var(--color-stress); }
+#card-notes  .card-header { border-left: 4px solid var(--color-notes); }
+
+#card-mood.open   { border-color: var(--color-mood); }
+#card-water.open  { border-color: var(--color-water); }
+#card-sleep.open  { border-color: var(--color-sleep); }
+#card-exercise.open { border-color: var(--color-exercise); }
+#card-stress.open { border-color: var(--color-stress); }
+#card-notes.open  { border-color: var(--color-notes); }
+
+#card-mood   .card-header:hover { background: var(--color-mood-bg); }
+#card-water  .card-header:hover { background: var(--color-water-bg); }
+#card-sleep  .card-header:hover { background: var(--color-sleep-bg); }
+#card-exercise .card-header:hover { background: var(--color-ex-bg); }
+#card-stress .card-header:hover { background: var(--color-stress-bg); }
+#card-notes  .card-header:hover { background: var(--color-notes-bg); }
+
+/* water count uses water color */
+.water-count { color: var(--color-water) !important; }
+.cup { border-color: var(--color-water) !important; }
+.cup.filled { background: var(--color-water) !important; }
+.btn-add { background: var(--color-water) !important; }
+
+/* sleep duration uses sleep color */
+.sleep-duration { color: var(--color-sleep) !important; }
+
+/* exercise done uses exercise color */
+.exercise-item.done { border-color: var(--color-exercise) !important; background: var(--color-ex-bg) !important; }
+.exercise-item.done .ex-check { background: var(--color-exercise) !important; border-color: var(--color-exercise) !important; }
+
+/* insight cards color-coded values */
+#ins-water { color: var(--color-water) !important; }
+#ins-sleep { color: var(--color-sleep) !important; }
+#ins-mood  { color: var(--color-mood) !important; }
+#ins-stress { color: var(--color-stress) !important; }
+#ins-exercise { color: var(--color-exercise) !important; }
+#ins-logged { color: var(--primary) !important; }
 textarea {
   width: 100%;
   border: 1px solid var(--border);

@@ -93,6 +93,11 @@
     <span id="current-date"></span>
     <button id="next-day" aria-label="Next day">&#8594;</button>
   </div>
+
+  <div class="greeting-bar" id="greeting-bar">
+    <span id="greeting-text"></span>
+    <span id="greeting-sub"></span>
+  </div>
   <div class="progress-row">
     <div class="progress-item">
       <svg class="ring" viewBox="0 0 64 64">
@@ -500,8 +505,24 @@ function showApp(user) {
   document.getElementById('auth-overlay').classList.add('hidden');
   document.getElementById('app-wrap').classList.remove('hidden');
   document.getElementById('user-name-pill').textContent = '👤 ' + user.name;
-  // Load initial data
+  updateGreeting(user.name);
   loadEntry();
+}
+
+function updateGreeting(name) {
+  var hour = new Date().getHours();
+  var greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  var firstName = name ? name.split(' ')[0] : '';
+  var subs = [
+    'How are you feeling today?',
+    'Let\'s check in on your habits.',
+    'Small steps, big changes.',
+    'Your streak is waiting for you.',
+    'Take a moment for yourself.',
+  ];
+  var sub = subs[new Date().getDay() % subs.length];
+  document.getElementById('greeting-text').textContent = greet + ', ' + firstName + ' \uD83D\uDC4B';
+  document.getElementById('greeting-sub').textContent = sub;
 }
 
 function showAuth() {
