@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// one entry per user per day
 const entrySchema = new mongoose.Schema(
   {
     user: {
@@ -8,7 +9,7 @@ const entrySchema = new mongoose.Schema(
       required: true,
     },
     date: {
-      type: String, // stored as YYYY-MM-DD
+      type: String, // YYYY-MM-DD
       required: true,
     },
     mood: {
@@ -49,7 +50,7 @@ const entrySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// One entry per user per date
+// compound index so the same user can't have two entries for the same date
 entrySchema.index({ user: 1, date: 1 }, { unique: true });
 
 module.exports = mongoose.model('Entry', entrySchema);

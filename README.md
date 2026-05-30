@@ -1,74 +1,31 @@
-# 🌿 HabitPulse
+# HabitPulse 🌿
 
-A full-stack wellness tracking app to log and analyze daily habits — mood, water, sleep, exercise, stress, and notes.
+I built this because I kept forgetting to drink water and had no idea why I felt tired all the time. Turns out tracking small habits actually helps.
 
-## Features
+HabitPulse is a personal wellness tracker where you log your daily mood, water intake, sleep, exercise, stress, and notes. It stores everything in a real database so your data doesn't disappear when you clear your browser.
 
-- **User Authentication** — Register & login with JWT-based auth, passwords hashed with bcrypt
-- **REST API** — Express.js backend with protected routes
-- **MongoDB Database** — Habit entries stored per user with Mongoose schemas
-- **Mood** — Log how you're feeling with 5 emoji levels
-- **Water** — Track daily glass intake with a visual cup grid
-- **Sleep** — Set bedtime and wake-up time to calculate duration
-- **Exercise** — Check off activities (walk, stretch, strength, cardio)
-- **Stress** — Rate your stress level on a 1–10 slider
-- **Notes** — Free-form daily journal entry
-- **Weekly Insights** — Averages, bar charts, and personalized tips (server-side analytics)
-- **Streak Tracker** — Tracks consecutive logged days
-- **Export Data** — Download all your entries as JSON
-- **Dark Mode** — Respects system preference, toggleable manually
-- **Rate Limiting** — API protected against abuse
-- **Date Navigation** — Log or review any past day
+## What it does
 
-## Tech Stack
+- Log your mood, water, sleep, exercise, stress and notes every day
+- See weekly trends — avg sleep, water, stress, most common mood
+- Track your streak (consecutive days logged)
+- Browse past 30 days of entries
+- Export your data as a PDF report
+- Dark mode (because obviously)
 
-- **Frontend:** Vanilla HTML, CSS, JavaScript
-- **Backend:** Node.js, Express.js
-- **Database:** MongoDB with Mongoose
-- **Auth:** JWT (jsonwebtoken) + bcryptjs
-- **Security:** express-rate-limit, express-validator, CORS
+## Tech used
 
-## Project Structure
+**Frontend** — plain HTML, CSS and JavaScript. No framework, kept it simple on purpose so I could focus on the backend.
 
-```
-HabitPulse/
-├── backend/
-│   ├── models/
-│   │   ├── User.js          # Mongoose user schema
-│   │   └── Entry.js         # Mongoose habit entry schema
-│   ├── routes/
-│   │   ├── auth.js          # POST /api/auth/register, /login, GET /me
-│   │   └── entries.js       # GET/POST /api/entries/:date, analytics, export
-│   ├── middleware/
-│   │   └── auth.js          # JWT verification middleware
-│   ├── server.js            # Express app, MongoDB connection
-│   └── .env.example         # Environment variable template
-├── index.html               # Frontend app
-├── style.css                # All styles including dark mode
-└── README.md
-```
+**Backend** — Node.js + Express.js REST API with JWT authentication. Passwords are hashed with bcrypt before storing.
 
-## API Endpoints
+**Database** — MongoDB with Mongoose. Each user's entries are stored separately, one document per day.
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/auth/register` | Create account | Public |
-| POST | `/api/auth/login` | Login, get JWT | Public |
-| GET | `/api/auth/me` | Get current user | Private |
-| POST | `/api/entries/:date` | Save/update entry | Private |
-| GET | `/api/entries/:date` | Get entry by date | Private |
-| GET | `/api/entries` | Get last 30 entries | Private |
-| GET | `/api/entries/analytics/weekly` | Weekly stats | Private |
-| GET | `/api/entries/export/json` | Export all data | Private |
-| DELETE | `/api/entries/:date` | Delete entry | Private |
+**Security** — rate limiting on all API routes (stricter on auth), input validation with express-validator, CORS configured for local dev.
 
-## Getting Started
+## Running it locally
 
-### Prerequisites
-- Node.js v18+
-- MongoDB (local or Atlas)
-
-### Setup
+You'll need Node.js and MongoDB installed.
 
 ```bash
 git clone https://github.com/KhushiG27/HabitPulse.git
@@ -76,20 +33,60 @@ cd HabitPulse/backend
 npm install
 ```
 
-Create a `.env` file in the `backend/` folder:
+Create a `.env` file inside `backend/`:
 ```
 MONGO_URI=mongodb://localhost:27017/habitpulse
-JWT_SECRET=your_secret_key_here
+JWT_SECRET=pick_any_long_random_string
 PORT=5000
 ```
 
-Start the backend:
+Start the server:
 ```bash
 node server.js
 ```
 
-Then open `index.html` in your browser (use Live Server or any static file server).
+Then open `index.html` with Live Server (VS Code extension) or any static file server. The frontend talks to the backend at `localhost:5000`.
 
-## License
+## API routes
 
-MIT
+| Method | Route | What it does |
+|--------|-------|--------------|
+| POST | `/api/auth/register` | Create account |
+| POST | `/api/auth/login` | Login, returns JWT |
+| GET | `/api/auth/me` | Get logged-in user |
+| POST | `/api/entries/:date` | Save or update a day's entry |
+| GET | `/api/entries/:date` | Get a specific day |
+| GET | `/api/entries` | Last 30 days |
+| GET | `/api/entries/analytics/weekly` | Weekly stats (server-side) |
+| GET | `/api/entries/export/json` | Export everything |
+| DELETE | `/api/entries/:date` | Delete an entry |
+
+## Folder structure
+
+```
+HabitPulse/
+├── backend/
+│   ├── models/
+│   │   ├── User.js        
+│   │   └── Entry.js       
+│   ├── routes/
+│   │   ├── auth.js        
+│   │   └── entries.js     
+│   ├── middleware/
+│   │   └── auth.js        
+│   ├── server.js          
+│   └── .env.example       
+├── index.html             
+├── style.css              
+└── README.md
+```
+
+## Known limitations
+
+- No password reset yet
+- Works best on mobile screen sizes
+- Needs the backend running locally to work (not deployed yet)
+
+---
+
+Made by Khushi Gupta
