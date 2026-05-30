@@ -764,6 +764,7 @@ input[type="range"] {
 }
 .modal-dl-btn.csv { background: #43c6ac; color: #fff; }
 .modal-dl-btn.json { background: var(--primary); color: #fff; }
+.modal-dl-btn.pdf { background: #e53e3e; color: #fff; }
 .modal-dl-btn:hover { opacity: 0.85; }
 
 .modal-table-wrap {

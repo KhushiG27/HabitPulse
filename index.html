@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HabitPulse</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -314,6 +316,7 @@
     <div class="modal-actions">
       <button class="modal-dl-btn csv" id="dl-csv">⬇️ Download CSV</button>
       <button class="modal-dl-btn json" id="dl-json">⬇️ Download JSON</button>
+      <button class="modal-dl-btn pdf" id="dl-pdf">⬇️ Download PDF</button>
     </div>
     <div class="modal-table-wrap" id="modal-table-wrap">
       <p class="modal-loading">Loading your data...</p>
@@ -971,6 +974,10 @@ document.addEventListener('DOMContentLoaded', function() {
     downloadJSON();
   });
 
+  document.getElementById('dl-pdf').addEventListener('click', function() {
+    downloadPDF();
+  });
+
 // ── Export modal ─────────────────────────────────────────────────
 var exportData = [];
 
@@ -1057,6 +1064,135 @@ function downloadCSV() {
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   triggerDownload(blob, 'habitpulse-data.csv');
   showToast('CSV downloaded! 📊');
+}
+
+function downloadPDF() {
+  if (exportData.length === 0) { showToast('No data to export'); return; }
+
+  var user = getUser();
+  var { jsPDF } = window.jspdf;
+  var doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  var pageW = doc.internal.pageSize.getWidth();
+
+  // ── Header background ──────────────────────────────────────────
+  doc.setFillColor(108, 99, 255);
+  doc.rect(0, 0, pageW, 28, 'F');
+
+  // ── Logo & title ───────────────────────────────────────────────
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('🌿 HabitPulse', 14, 12);
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Wellness Report', 14, 20);
+
+  // ── User & date info ───────────────────────────────────────────
+  var now = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  doc.text('Exported: ' + now, pageW - 14, 12, { align: 'right' });
+  if (user) doc.text('User: ' + user.email, pageW - 14, 20, { align: 'right' });
+
+  // ── Summary stats ──────────────────────────────────────────────
+  doc.setTextColor(50, 50, 50);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Summary', 14, 36);
+
+  var totalEntries = exportData.length;
+  var avgWater = (exportData.reduce(function(s, e) { return s + (e.water || 0); }, 0) / totalEntries).toFixed(1);
+  var avgStress = (exportData.reduce(function(s, e) { return s + (e.stress || 5); }, 0) / totalEntries).toFixed(1);
+  var activeDays = exportData.filter(function(e) { return e.exercise && e.exercise.length > 0; }).length;
+  var moodCounts = {};
+  exportData.forEach(function(e) { if (e.mood) moodCounts[e.mood] = (moodCounts[e.mood] || 0) + 1; });
+  var topMood = Object.keys(moodCounts).sort(function(a, b) { return moodCounts[b] - moodCounts[a]; })[0] || '—';
+  var moodLabels = { awful: 'Awful', bad: 'Bad', okay: 'Okay', good: 'Good', great: 'Great' };
+
+  var summaryData = [
+    ['Total Entries', totalEntries, 'Avg Water', avgWater + ' glasses/day'],
+    ['Avg Stress', avgStress + '/10', 'Active Days', activeDays + ' days'],
+    ['Top Mood', moodLabels[topMood] || topMood, 'Date Range', exportData[exportData.length - 1].date + ' → ' + exportData[0].date],
+  ];
+
+  doc.autoTable({
+    startY: 40,
+    head: [],
+    body: summaryData,
+    theme: 'plain',
+    styles: { fontSize: 9, cellPadding: 3 },
+    columnStyles: {
+      0: { fontStyle: 'bold', textColor: [108, 99, 255], cellWidth: 35 },
+      1: { cellWidth: 45 },
+      2: { fontStyle: 'bold', textColor: [108, 99, 255], cellWidth: 35 },
+      3: { cellWidth: 60 },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  // ── Entries table ──────────────────────────────────────────────
+  var afterSummary = doc.lastAutoTable.finalY + 8;
+
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(50, 50, 50);
+  doc.text('Daily Entries', 14, afterSummary);
+
+  var tableRows = exportData.map(function(e) {
+    var sl = calcSleep(e.sleepStart || '22:30', e.sleepEnd || '06:30');
+    var exList = e.exercise && e.exercise.length > 0 ? e.exercise.join(', ') : '—';
+    var notes = e.notes ? e.notes.substring(0, 50) + (e.notes.length > 50 ? '...' : '') : '—';
+    return [
+      e.date,
+      moodLabels[e.mood] || '—',
+      (e.water || 0) + '/8',
+      sl.label,
+      exList,
+      (e.stress || 5) + '/10',
+      notes,
+    ];
+  });
+
+  doc.autoTable({
+    startY: afterSummary + 4,
+    head: [['Date', 'Mood', 'Water', 'Sleep', 'Exercise', 'Stress', 'Notes']],
+    body: tableRows,
+    theme: 'striped',
+    headStyles: {
+      fillColor: [108, 99, 255],
+      textColor: 255,
+      fontStyle: 'bold',
+      fontSize: 9,
+    },
+    bodyStyles: { fontSize: 8.5, textColor: [50, 50, 50] },
+    alternateRowStyles: { fillColor: [237, 233, 255] },
+    columnStyles: {
+      0: { cellWidth: 28, fontStyle: 'bold' },
+      1: { cellWidth: 22 },
+      2: { cellWidth: 18, halign: 'center' },
+      3: { cellWidth: 22 },
+      4: { cellWidth: 45 },
+      5: { cellWidth: 18, halign: 'center' },
+      6: { cellWidth: 'auto' },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  // ── Footer ─────────────────────────────────────────────────────
+  var pageCount = doc.internal.getNumberOfPages();
+  for (var i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(
+      'HabitPulse Wellness Report  •  Page ' + i + ' of ' + pageCount,
+      pageW / 2, doc.internal.pageSize.getHeight() - 6,
+      { align: 'center' }
+    );
+  }
+
+  doc.save('habitpulse-report.pdf');
+  showToast('PDF downloaded! 📄');
 }
 
 function downloadJSON() {
